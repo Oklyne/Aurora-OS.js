@@ -24,7 +24,7 @@ import { AppTemplate } from './apps/AppTemplate';
 import { useFileSystem, FileNode } from './FileSystemContext';
 import { useAppStorage } from '../hooks/useAppStorage';
 
-export function FileManager() {
+export function FileManager({ initialPath }: { initialPath?: string }) {
   const { accentColor } = useAppContext();
   const { listDirectory, homePath } = useFileSystem();
 
@@ -34,10 +34,11 @@ export function FileManager() {
   });
 
   // Each FileManager instance has its own navigation state (independent windows, NOT persisted)
-  const [currentPath, setCurrentPath] = useState(homePath);
+  const startPath = initialPath || homePath;
+  const [currentPath, setCurrentPath] = useState(startPath);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [items, setItems] = useState<FileNode[]>([]);
-  const [history, setHistory] = useState<string[]>([homePath]);
+  const [history, setHistory] = useState<string[]>([startPath]);
   const [historyIndex, setHistoryIndex] = useState(0);
 
   // Load directory contents when path changes
@@ -53,10 +54,10 @@ export function FileManager() {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Data fetching pattern
       setItems(sorted);
     } else {
-       
+
       setItems([]);
     }
-     
+
     setSelectedItem(null);
   }, [currentPath, listDirectory]);
 

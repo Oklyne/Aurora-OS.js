@@ -9,7 +9,14 @@ interface CommandHistory {
   error?: boolean;
 }
 
-export function Terminal() {
+const PATH = ['/bin', '/usr/bin'];
+const BUILTINS = ['cd', 'export', 'alias'];
+
+export interface TerminalProps {
+  onLaunchApp?: (appId: string, args: string[]) => void;
+}
+
+export function Terminal({ onLaunchApp }: TerminalProps) {
   const { accentColor } = useAppContext();
   const [history, setHistory] = useState<CommandHistory[]>([]);
   const [input, setInput] = useState('');
@@ -60,6 +67,90 @@ export function Terminal() {
     return '/' + parts.join('/');
   };
 
+  const getAutocompleteCandidates = (partial: string, isCommand: boolean): string[] => {
+    const candidates: string[] = [];
+
+    if (isCommand) {
+      // 1. Search Builtins
+      candidates.push(...BUILTINS.filter(c => c.startsWith(partial)));
+
+      // 2. Search PATH
+      for (const pathDir of PATH) {
+        const files = listDirectory(pathDir);
+        if (files) {
+          files.forEach(f => {
+            if (f.name.startsWith(partial) && f.type === 'file') {
+              candidates.push(f.name);
+            }
+          });
+        }
+      }
+    } else {
+      // File path completion
+      let searchDir = currentPath;
+      let searchPrefix = partial;
+
+      const lastSlash = partial.lastIndexOf('/');
+      if (lastSlash !== -1) {
+        const dirPart = partial.substring(0, lastSlash);
+        searchPrefix = partial.substring(lastSlash + 1);
+        searchDir = resolvePath(dirPart);
+      }
+
+      const files = listDirectory(searchDir);
+      if (files) {
+        files.forEach(f => {
+          if (f.name.startsWith(searchPrefix)) {
+            const suffix = f.type === 'directory' ? '/' : '';
+            candidates.push(f.name + suffix);
+          }
+        });
+      }
+    }
+
+    return Array.from(new Set(candidates)).sort();
+  };
+
+  const handleTabCompletion = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (!input) return;
+
+    const parts = input.split(' ');
+    const isCommand = parts.length === 1 && !input.endsWith(' ');
+    const partial = isCommand ? parts[0] : parts[parts.length - 1];
+
+    const candidates = getAutocompleteCandidates(partial, isCommand);
+
+    if (candidates.length === 0) return;
+
+    if (candidates.length === 1) {
+      const completion = candidates[0];
+      let newInput = input;
+
+      if (isCommand) {
+        newInput = completion + ' ';
+      } else {
+        const lastSlash = partial.lastIndexOf('/');
+        if (lastSlash !== -1) {
+          const dirPart = partial.substring(0, lastSlash + 1);
+          const completedArg = dirPart + completion;
+          parts[parts.length - 1] = completedArg;
+          newInput = parts.join(' ');
+        } else {
+          parts[parts.length - 1] = completion;
+          newInput = parts.join(' ');
+        }
+      }
+
+      setInput(newInput);
+    } else {
+      setHistory(prev => [
+        ...prev,
+        { command: input, output: candidates, error: false }
+      ]);
+    }
+  };
+
   const executeCommand = (input: string) => {
     const trimmed = input.trim();
     if (!trimmed) {
@@ -74,6 +165,7 @@ export function Terminal() {
     let output: string[] = [];
     let error = false;
 
+    // 1. Check Built-ins
     switch (command) {
       case 'help':
         output = [
@@ -90,6 +182,7 @@ export function Terminal() {
           '  hostname          - Print system hostname',
           '  clear             - Clear terminal',
           '  help              - Show this help message',
+          '  [app]             - Launch installed applications (e.g. Finder)',
           ''
         ];
         break;
@@ -180,7 +273,12 @@ export function Terminal() {
           output = ['mkdir: missing operand'];
           error = true;
         } else {
-          const success = createDirectory(currentPath, args[0]);
+          const fullPath = resolvePath(args[0]);
+          const lastSlashIndex = fullPath.lastIndexOf('/');
+          const parentPath = lastSlashIndex === 0 ? '/' : fullPath.substring(0, lastSlashIndex);
+          const name = fullPath.substring(lastSlashIndex + 1);
+
+          const success = createDirectory(parentPath, name);
           if (success) {
             output = [];
           } else {
@@ -196,7 +294,12 @@ export function Terminal() {
           output = ['touch: missing file operand'];
           error = true;
         } else {
-          const success = createFile(currentPath, args[0], '');
+          const fullPath = resolvePath(args[0]);
+          const lastSlashIndex = fullPath.lastIndexOf('/');
+          const parentPath = lastSlashIndex === 0 ? '/' : fullPath.substring(0, lastSlashIndex);
+          const name = fullPath.substring(lastSlashIndex + 1);
+
+          const success = createFile(parentPath, name, '');
           if (success) {
             output = [];
           } else {
@@ -233,9 +336,64 @@ export function Terminal() {
         setInput('');
         return;
 
-      default:
-        output = [`${command}: command not found`];
-        error = true;
+      default: {
+        // Check PATH for executable
+        let foundPath: string | null = null;
+
+        // Check if command is a relative or absolute path
+        if (command.includes('/')) {
+          const resolved = resolvePath(command);
+          const node = getNodeAtPath(resolved);
+          if (node && node.type === 'file') foundPath = resolved;
+        } else {
+          // Search PATH
+          for (const dir of PATH) {
+            // PATH directories are absolute
+            // Ensure trailing slash logic isn't messing up
+            // dir: /bin. command: ls. -> /bin/ls
+            const checkPath = (dir === '/' ? '' : dir) + '/' + command;
+            const node = getNodeAtPath(checkPath);
+            if (node && node.type === 'file') {
+              foundPath = checkPath;
+              break;
+            }
+          }
+        }
+
+        if (foundPath) {
+          const content = readFile(foundPath);
+          if (content && content.startsWith('#!app ')) {
+            const appId = content.slice(6).trim();
+
+            // Resolve arguments ? 
+            // Currently args are raw strings from split. 
+            // For Finder /home/user, arg is /home/user.
+            // We might want to resolve it to absolute path to help the app?
+            // But 'Finder' app expects 'initialPath'.
+            // It's safer to resolve it here IF it looks like a path?
+            // Or let App handle data?
+            // Let's passed raw args + resolved args?
+            // "openWindow" takes simple structure.
+            // I'll resolve the first arg IF it exists, just in case.
+            const resolvedArgs = args.map(arg => {
+              if (arg.startsWith('/') || arg.startsWith('~') || arg.startsWith('.')) {
+                return resolvePath(arg);
+              }
+              return arg;
+            });
+
+            onLaunchApp?.(appId, resolvedArgs);
+            output = []; // Silent launch
+          } else if (content && content.startsWith('#!')) {
+            output = [`${command}: script execution not fully supported`];
+          } else {
+            output = [`${command}: binary file`];
+          }
+        } else {
+          output = [`${command}: command not found`];
+          error = true;
+        }
+      }
     }
 
     setHistory([...history, { command: trimmed, output, error }]);
@@ -244,6 +402,11 @@ export function Terminal() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Tab') {
+      handleTabCompletion(e);
+      return;
+    }
+
     if (e.key === 'Enter') {
       executeCommand(input);
       setInput('');
@@ -266,14 +429,10 @@ export function Terminal() {
           setInput(commandHistory[newIndex]);
         }
       }
-    } else if (e.key === 'Tab') {
-      e.preventDefault();
-      // Basic tab completion could be added here
     }
   };
 
   const getPrompt = () => {
-    // Show path relative to home, or absolute if outside home
     let displayPath: string;
     if (currentPath === homePath) {
       displayPath = '~';
@@ -321,7 +480,6 @@ export function Terminal() {
           </div>
         ))}
 
-        {/* Current Input Line */}
         <div className="flex gap-2">
           <span className="text-green-400">{getPrompt()}</span>
           <input

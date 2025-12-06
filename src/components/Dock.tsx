@@ -147,6 +147,7 @@ function DockComponent({ onOpenApp, onRestoreWindow, onFocusWindow, windows }: D
             return (
               <motion.button
                 key={app.id}
+                aria-label={app.label}
                 className={`relative w-12 h-12 rounded-xl bg-gradient-to-br ${app.color} flex items-center justify-center text-white 
                   ${!disableShadows ? 'shadow-lg hover:shadow-xl' : ''} transition-all`}
                 onMouseEnter={() => setHoveredIndex(index)}

@@ -1,5 +1,11 @@
 # Version History
 
+## v0.6.1
+- **Desktop Mirroring**: Live synchronization between `~/Desktop` directory and the Desktop UI.
+- **Terminal App Launch**: Launch apps (Finder, Browser, etc.) via Terminal with argument support (`Finder /home`).
+- **Terminal Enhancements**: Fixed path resolution (`mkdir`, `touch`), added Tab autocomplete, and PATH scanning.
+- **Settings**: Added "Danger Zone" with Soft Reset and Hard Reset options.
+
 ## v0.6.0
 - **Virtual Filesystem**: Linux-inspired filesystem with `/bin`, `/etc`, `/home`, `/var`, and more.
 - **Terminal Integration**: Full command-line interface (`ls`, `cd`, `cat`, `mkdir`, `rm`, `whoami`, `hostname`) connected to virtual filesystem.

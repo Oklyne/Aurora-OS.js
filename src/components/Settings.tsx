@@ -1,8 +1,10 @@
-import { Palette, Monitor, Bell, Shield, Wifi, User, HardDrive, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { Palette, Monitor, Bell, Shield, Wifi, User, HardDrive, Zap, Info, AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
 import { useAppContext } from './AppContext';
 import { Checkbox } from './ui/checkbox';
 import { AppTemplate } from './apps/AppTemplate';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './ui/accordion';
+import { softReset, hardReset, getStorageStats, formatBytes } from '../utils/memory';
 
 const settingsSidebar = {
   sections: [
@@ -17,6 +19,12 @@ const settingsSidebar = {
         { id: 'security', label: 'Security & Privacy', icon: Shield },
         { id: 'users', label: 'Users & Groups', icon: User },
         { id: 'storage', label: 'Storage', icon: HardDrive },
+      ]
+    },
+    {
+      title: 'General',
+      items: [
+        { id: 'about', label: 'About', icon: Info },
       ]
     }
   ]
@@ -48,6 +56,18 @@ export function Settings() {
     setDisableShadows
   } = useAppContext();
   const [customColor, setCustomColor] = useState(accentColor);
+
+  // About section state
+  const storageStats = useMemo(() => {
+    return activeSection === 'about' ? getStorageStats() : {
+      softMemory: { keys: 0, bytes: 0 },
+      hardMemory: { keys: 0, bytes: 0 },
+      total: { keys: 0, bytes: 0 }
+    };
+  }, [activeSection]);
+
+  const [showSoftConfirm, setShowSoftConfirm] = useState(false);
+  const [showHardConfirm, setShowHardConfirm] = useState(false);
 
   const handleCustomColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -324,6 +344,148 @@ export function Settings() {
           <div className="bg-black/20 rounded-xl p-6 border border-white/5">
             <p className="text-white/60">Storage settings coming soon...</p>
           </div>
+        </div>
+      )}
+
+      {activeSection === 'about' && (
+        <div>
+          <h2 className="text-2xl text-white mb-6">About Aurora OS</h2>
+
+          {/* System Info */}
+          <div className="bg-black/20 rounded-xl p-6 mb-6 border border-white/5">
+            <h3 className="text-lg text-white mb-4">System Information</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-white/60">Version</span>
+                <span className="text-white">0.6.0</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/60">Build</span>
+                <span className="text-white">React 19 + Vite 7</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Memory Usage */}
+          <div className="bg-black/20 rounded-xl p-6 mb-6 border border-white/5">
+            <h3 className="text-lg text-white mb-4">Memory Usage</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-white/60">Preferences (Soft Memory)</span>
+                <span className="text-white">{formatBytes(storageStats.softMemory.bytes)} ({storageStats.softMemory.keys} items)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/60">Filesystem (Hard Memory)</span>
+                <span className="text-white">{formatBytes(storageStats.hardMemory.bytes)} ({storageStats.hardMemory.keys} items)</span>
+              </div>
+              <div className="flex justify-between border-t border-white/10 pt-3">
+                <span className="text-white/80 font-medium">Total</span>
+                <span className="text-white font-medium">{formatBytes(storageStats.total.bytes)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Danger Zone Accordion */}
+          <Accordion type="single" collapsible className="bg-black/20 rounded-xl border border-red-500/30 overflow-hidden">
+            <AccordionItem value="danger-zone" className="border-none">
+              <AccordionTrigger className="w-full !px-6 py-4 text-red-400 hover:no-underline hover:text-red-300">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  <span className="text-lg font-medium">Danger Zone</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="!px-6 pb-6">
+                <div className="space-y-6">
+                  {/* Soft Reset */}
+                  <div className="bg-black/30 rounded-lg p-4 border border-white/10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <RefreshCw className="w-5 h-5 text-white" />
+                      <h4 className="text-white font-medium">Soft Reset</h4>
+                    </div>
+                    <p className="text-sm text-white/60 mb-4">
+                      Resets preferences, theme settings, desktop icon positions, and app states.
+                      Your files and folders will be preserved.
+                    </p>
+                    <div className="flex gap-2">
+                      {!showSoftConfirm ? (
+                        <button
+                          onClick={() => setShowSoftConfirm(true)}
+                          className="px-4 py-2 rounded-lg text-white transition-all hover:opacity-90"
+                          style={{ backgroundColor: accentColor }}
+                        >
+                          Reset Preferences
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setShowSoftConfirm(false)}
+                            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => {
+                              softReset();
+                              setShowSoftConfirm(false);
+                              window.location.reload();
+                            }}
+                            className="px-4 py-2 rounded-lg text-white transition-all hover:opacity-90"
+                            style={{ backgroundColor: accentColor }}
+                          >
+                            Confirm Reset
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Hard Reset */}
+                  <div className="bg-black/30 rounded-lg p-4 border border-red-500/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Trash2 className="w-5 h-5 text-red-500" />
+                      <h4 className="text-white font-medium">Hard Reset</h4>
+                    </div>
+                    <p className="text-sm text-white/60 mb-2">
+                      Completely wipes all data including files, folders, and settings.
+                      This action cannot be undone.
+                    </p>
+                    <p className="text-sm text-red-400 mb-4">
+                      ⚠️ All custom files and folders will be permanently deleted
+                    </p>
+                    <div className="flex gap-2">
+                      {!showHardConfirm ? (
+                        <button
+                          onClick={() => setShowHardConfirm(true)}
+                          className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
+                        >
+                          Factory Reset
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setShowHardConfirm(false)}
+                            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => {
+                              hardReset();
+                              setShowHardConfirm(false);
+                              window.location.reload();
+                            }}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
+                          >
+                            Yes, Delete Everything
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       )}
     </div>

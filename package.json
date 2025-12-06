@@ -1,6 +1,6 @@
 {
       "name": "aurora-os-js",
-      "version": "0.6.0",
+      "version": "0.6.1",
       "private": true,
       "dependencies": {
             "@radix-ui/react-accordion": "^1.2.3",

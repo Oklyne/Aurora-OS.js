@@ -1,4 +1,4 @@
-# Aurora OS.js [![Version](https://img.shields.io/badge/version-v0.6.0-blue)](https://github.com/mental-os/Aurora-OS.js) [![Dependabot Updates](https://github.com/mental-os/Aurora-OS.js/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/mental-os/Aurora-OS.js/actions/workflows/dependabot/dependabot-updates) [![Build](https://github.com/mental-os/Aurora-OS.js/actions/workflows/ci.yml/badge.svg)](https://github.com/mental-os/Aurora-OS.js/actions/workflows/ci.yml)
+# Aurora OS.js [![Version](https://img.shields.io/badge/version-v0.6.1-blue)](https://github.com/mental-os/Aurora-OS.js) [![Dependabot Updates](https://github.com/mental-os/Aurora-OS.js/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/mental-os/Aurora-OS.js/actions/workflows/dependabot/dependabot-updates) [![Build](https://github.com/mental-os/Aurora-OS.js/actions/workflows/ci.yml/badge.svg)](https://github.com/mental-os/Aurora-OS.js/actions/workflows/ci.yml)
 
 A modern, web-based desktop operating system interface built with React, Tailwind CSS, and Radix UI.
 
@@ -59,13 +59,13 @@ npm test
 
 ## Release Notes
 
-### v0.6.0
-- **Virtual Filesystem**: Linux-inspired filesystem with `/bin`, `/etc`, `/home`, `/var` and more.
-- **Terminal Integration**: Full command-line interface connected to the virtual filesystem.
-- **Persistence**: Settings, desktop icons, filesystem, and app states are all saved to localStorage.
-- **App Storage Hook**: New `useAppStorage` hook for all apps to persist their state.
-- **Window Improvements**: State preservation on minimize/restore, smooth dock-directed animations.
-- **Auto-Focus**: Automatically focuses next window when minimizing.
+### v0.6.1
+- **Desktop Mirroring**: Live synchronization between `~/Desktop` directory and the Desktop UI.
+- **Terminal App Launch**: Launch apps (Finder, Browser, etc.) via Terminal with argument support (`Finder /home`).
+- **Terminal Enhancements**: Fixed path resolution (`mkdir`, `touch`), added Tab autocomplete, and PATH scanning.
+- **Settings**: Added "Danger Zone" with Soft Reset and Hard Reset options.
+
+
 
 [View full version history](HISTORY.md)
 
@@ -73,3 +73,6 @@ npm test
 
 Not yet available
 
+## AI disclosure
+
+"Aurora OS" is a human-writen project that makes use of AI-powered IDE's to generate documentation, GitHub integrations, bug testing, and roadmap tracking.
