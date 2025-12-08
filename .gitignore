@@ -134,3 +134,4 @@ win-unpacked
 *.njsproj
 *.sln
 *.sw?
+.agent/

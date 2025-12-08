@@ -1,3 +1,4 @@
+import pkg from '../../package.json';
 
 export interface FileNode {
     id: string;
@@ -94,7 +95,7 @@ export function createUserHome(username: string): any {
             { name: 'Pictures', type: 'directory', children: [], owner: username, permissions: 'drwxr-xr-x' },
             { name: 'Music', type: 'directory', children: [], owner: username, permissions: 'drwxr-xr-x' },
             { name: 'Videos', type: 'directory', children: [], owner: username, permissions: 'drwxr-xr-x' },
-            { name: 'Config', type: 'directory', children: [], owner: username, permissions: 'drwxr-x---' },
+            { name: '.Config', type: 'directory', children: [], owner: username, permissions: 'drwx------' },
             { name: '.Trash', type: 'directory', children: [], owner: username, permissions: 'drwx------' },
         ],
     };
@@ -135,7 +136,7 @@ export const initialFileSystem: any = {
             permissions: 'drwxr-xr-x',
             owner: 'root',
             children: [
-                { name: 'kernel', type: 'file', permissions: '-rw-r--r--', owner: 'root', content: 'Aurora OS Kernel v0.5.2' },
+                { name: 'kernel', type: 'file', permissions: '-rw-r--r--', owner: 'root', content: `Aurora OS Kernel ${pkg.version}` },
                 { name: 'initrd', type: 'file', permissions: '-rw-r--r--', owner: 'root', content: 'Initial ramdisk' },
             ],
         },
@@ -150,7 +151,7 @@ export const initialFileSystem: any = {
                 { name: 'group', type: 'file', permissions: '-rw-r--r--', owner: 'root', content: 'root:x:0:\nusers:x:100:user,guest\nadmin:x:10:user' },
                 { name: 'hostname', type: 'file', permissions: '-rw-r--r--', owner: 'root', content: 'aurora' },
                 { name: 'hosts', type: 'file', permissions: '-rw-r--r--', owner: 'root', content: '127.0.0.1\tlocalhost\n::1\t\tlocalhost' },
-                { name: 'os-release', type: 'file', permissions: '-rw-r--r--', owner: 'root', content: 'NAME="Aurora OS"\nVERSION="0.5.2"\nID=aurora\nPRETTY_NAME="Aurora OS.js"' },
+                { name: 'os-release', type: 'file', permissions: '-rw-r--r--', owner: 'root', content: `NAME="Aurora OS"\nVERSION="${pkg.version}"\nID=${pkg.name}\nPRETTY_NAME="Aurora OS.js"` },
                 {
                     name: 'apt',
                     type: 'directory',
@@ -172,7 +173,15 @@ export const initialFileSystem: any = {
                 {
                     ...createUserHome('user'),
                     children: [
-                        { name: 'Desktop', type: 'directory', children: [], owner: 'user', permissions: 'drwxr-xr-x' },
+                        {
+                            name: 'Desktop',
+                            type: 'directory',
+                            owner: 'user',
+                            permissions: 'drwxr-xr-x',
+                            children: [
+                                { name: 'TEST.txt', type: 'file', content: `NAME="Aurora OS"\nVERSION="${pkg.version}"\nID=${pkg.name}\nPRETTY_NAME="Aurora OS.js"`, size: 60, owner: 'user', permissions: '-rw-r--r--' }
+                            ]
+                        },
                         {
                             name: 'Documents',
                             type: 'directory',
@@ -195,7 +204,7 @@ export const initialFileSystem: any = {
                         { name: 'Pictures', type: 'directory', children: [{ name: 'Screenshots', type: 'directory', children: [], owner: 'user' }], owner: 'user', permissions: 'drwxr-xr-x' },
                         { name: 'Music', type: 'directory', children: [], owner: 'user', permissions: 'drwxr-xr-x' },
                         { name: 'Videos', type: 'directory', children: [], owner: 'user', permissions: 'drwxr-xr-x' },
-                        { name: 'Config', type: 'directory', children: [], owner: 'user', permissions: 'drwxr-x---' },
+                        { name: '.Config', type: 'directory', children: [], owner: 'user', permissions: 'drwx------' },
                         { name: '.Trash', type: 'directory', children: [], owner: 'user', permissions: 'drwx------' },
                     ],
                 },
@@ -222,7 +231,7 @@ export const initialFileSystem: any = {
             children: [
                 { name: 'Desktop', type: 'directory', children: [], owner: 'root', permissions: 'drwxr-xr-x' },
                 { name: 'Downloads', type: 'directory', children: [], owner: 'root', permissions: 'drwxr-xr-x' },
-                { name: 'Config', type: 'directory', children: [], owner: 'root', permissions: 'drwx------' },
+                { name: '.Config', type: 'directory', children: [], owner: 'root', permissions: 'drwx------' },
                 { name: '.Trash', type: 'directory', children: [], owner: 'root', permissions: 'drwx------' },
                 { name: '.bashrc', type: 'file', content: '# Root bash configuration\nexport PS1="root@aurora# "', owner: 'root', permissions: '-rw-------' },
             ],

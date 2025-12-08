@@ -8,6 +8,7 @@ interface CommandHistory {
   command: string;
   output: (string | ReactNode)[];
   error?: boolean;
+  path: string;
 }
 
 const PATH = ['/bin', '/usr/bin'];
@@ -147,7 +148,7 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
     } else {
       setHistory(prev => [
         ...prev,
-        { command: input, output: candidates, error: false }
+        { command: input, output: candidates, error: false, path: currentPath }
       ]);
     }
   };
@@ -155,7 +156,7 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
   const executeCommand = (input: string) => {
     const trimmed = input.trim();
     if (!trimmed) {
-      setHistory([...history, { command: '', output: [] }]);
+      setHistory([...history, { command: '', output: [], path: currentPath }]);
       return;
     }
 
@@ -190,14 +191,15 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
 
       case 'ls': {
         const lsPath = args[0] ? resolvePath(args[0]) : currentPath;
-        const showHidden = args.includes('-a') || args.includes('-la') || args.includes('-al');
+        // const showHidden = args.includes('-a') || args.includes('-la') || args.includes('-al');
         const longFormat = args.includes('-l') || args.includes('-la') || args.includes('-al');
         const contents = listDirectory(lsPath);
         if (contents) {
           let filteredContents = contents;
-          if (!showHidden) {
-            filteredContents = contents.filter(node => !node.name.startsWith('.'));
-          }
+          // User requested standard behavior: ls shows all files (like -a) by default
+          // if (!showHidden) {
+          //   filteredContents = contents.filter(node => !node.name.startsWith('.'));
+          // }
           if (filteredContents.length === 0) {
             output = ['(empty directory)'];
           } else if (longFormat) {
@@ -338,7 +340,7 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
         break;
 
       case 'clear':
-        setHistory([{ command: '', output: [] }]);
+        setHistory([{ command: '', output: [], path: currentPath }]);
         setInput('');
         return;
 
@@ -382,7 +384,7 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
             // "openWindow" takes simple structure.
             // I'll resolve the first arg IF it exists, just in case.
             const resolvedArgs = args.map(arg => {
-              if (arg.startsWith('/') || arg.startsWith('~') || arg.startsWith('.')) {
+              if (!arg.startsWith('-')) {
                 return resolvePath(arg);
               }
               return arg;
@@ -402,7 +404,7 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
       }
     }
 
-    setHistory([...history, { command: trimmed, output, error }]);
+    setHistory([...history, { command: trimmed, output, error, path: currentPath }]);
     setCommandHistory([...commandHistory, trimmed]);
     setHistoryIndex(-1);
   };
@@ -438,14 +440,14 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
     }
   };
 
-  const getPrompt = () => {
+  const getPrompt = (path: string = currentPath) => {
     let displayPath: string;
-    if (currentPath === homePath) {
+    if (path === homePath) {
       displayPath = '~';
-    } else if (currentPath.startsWith(homePath + '/')) {
-      displayPath = '~' + currentPath.slice(homePath.length);
+    } else if (path.startsWith(homePath + '/')) {
+      displayPath = '~' + path.slice(homePath.length);
     } else {
-      displayPath = currentPath;
+      displayPath = path;
     }
 
     return (
@@ -471,7 +473,7 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
           <div key={index}>
             {entry.command && (
               <div className="flex gap-2">
-                <span className="text-green-400">{getPrompt()}</span>
+                <span className="text-green-400">{getPrompt(entry.path)}</span>
                 <span className="text-white">{entry.command}</span>
               </div>
             )}

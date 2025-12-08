@@ -343,6 +343,7 @@ function OS() {
 
   return (
     <div className="dark h-screen w-screen overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative">
+      <div className="window-drag-boundary absolute top-7 left-0 right-0 bottom-0 pointer-events-none z-0" />
       <Desktop
         onDoubleClick={() => { }}
         icons={desktopIcons}
@@ -372,6 +373,7 @@ function OS() {
           onFocus={() => focusWindow(window.id)}
           onUpdateState={(updates) => updateWindowState(window.id, updates)}
           isFocused={window.id === focusedWindowId}
+          bounds=".window-drag-boundary"
         />
       ))}
 

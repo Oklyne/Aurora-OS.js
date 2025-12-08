@@ -4,23 +4,22 @@ A modern, web-based desktop operating system interface built with React, Tailwin
 
 ## Features
 
-- **Desktop Environment**: Fully functional desktop with draggable windows, dock, and menu bar.
-- **Window Management**: Minimize, maximize, close, and focus management with smooth animations.
-- **Virtual Filesystem**: Linux-inspired filesystem (`/bin`, `/etc`, `/home`, etc.) with persistence.
+- **Desktop Environment**: Windows 11-inspired grid layout, multi-select drag-and-drop, and fluid window management with snap-like behavior.
+- **Window Management**: Minimize, maximize, close, and focus management with preserved state and independent navigation.
+- **Virtual Filesystem**: Complete in-memory Linux-style filesystem (`/bin`, `/etc`, `/home`, etc.) with permissions and persistent storage.
 - **App Ecosystem**:
-  - **Finder**: File system navigation and management.
-  - **Terminal**: Linux-style command line with `ls`, `cd`, `pwd`, `cat`, `mkdir`, `rm`, and launching apps from CLI.
-  - **Settings**: System configuration (Appearance, Accent Colors, Blur effects, Performance).
-  - **Music, Messages, Photos**: Interactive media and communication apps.
-- **Persistence**:
-  - **Settings**: Colors, themes, and performance preferences saved across sessions.
-  - **Filesystem**: All files and directories persist to localStorage.
-  - **Desktop Icons**: Icon positions are remembered.
-  - **App State**: Individual apps remember their state (sidebar, volume, etc.).
+  - **Finder**: Full-featured file manager with breadcrumbs navigation, drag-and-drop file moving, and list/grid views.
+  - **Terminal**: Zsh-like experience with autocomplete, command history, pipe support, and ability to launch GUI apps (`Finder /home`).
+  - **Settings**: System control panel for Appearance (Accent Colors, Themes), Performance (Motion/Shadows), and Data Management (Soft/Hard Reset).
+  - **Browser**: Functional web browser simulation with bookmarks, history, and tab management.
+  - **Media**: Interactive Music, Messages, and Photos apps demonstrating UI patterns.
+- **Security & Performance**:
+  - **Content Security Policy**: Strict CSP preventing XSS and `eval` execution in production.
+  - **Debounced Persistence**: Efficiently saves state to localStorage without UI freezing.
+  - **Native Integration**: Electron support with native window frame options and shell integration.
 - **Customization**:
-  - **Dark/Light Mode**: System-wide theme switching.
-  - **Accent Colors**: Dynamic system accent colors with "2025" palette.
-  - **Blur & Transparency**: Toggleable glassmorphism effects.
+  - **Theming**: "2025" Color Palette with dynamic Neutral, Shades, and Contrast modes.
+  - **Accessibility**: Reduce Motion and Disable Shadows options for lower-end devices.
 
 ## Tech Stack
 
@@ -56,11 +55,16 @@ npm test
 
 ## Release Notes
 
-## v0.6.2-patch2
-- **Unified Desktop Aesthetics**: Removed unselected "pill" backgrounds from Desktop icons and aligned text truncation with Finder (single-line).
-- **Window Focus UX**: Enabled "Click to Focus" on window content while restricting drag operations to the title bar.
-- **Scroll Regressions**: Fixed scrolling issues in Settings, Photos, and Browser apps caused by template refactors.
-- **Performance**: Refactored File System logic into utilities and implemented debounced persistence to prevent UI stuttering.
+## v0.6.2-patch3
+- **Environment**: Added Vite chunking for better performance.
+- **Desktop**: Added dragging constrains to prevent Windows going off-screen.
+- **Filesystem**: Improved special folders consistency (.Trash and .Config).
+- **Finder**: Fixed visibility of hidden files. Terminal will show hidden files.
+- **Dock**: Fixed active Window dot indicator to respect the accent color.
+- **Terminal**: Fixed path display in prompt.
+- **Finder**: Added full-path breadcrumbs to navigate through directories, with drag-to-move functionality.
+- **Finder**: Fixed breadcrumbs to show correct path if opened from Terminal.
+- **Environment**: Added Content Security Policy (CSP) to prevent XSS attacks, and other various web-standard security measures.
 
 [View full version history](HISTORY.md)
 
@@ -70,4 +74,4 @@ Not yet available
 
 ## AI disclosure
 
-"Aurora OS" is a human-writen project that makes use of AI-powered IDE's to generate documentation, GitHub integrations, bug testing, and roadmap tracking.
+This project, "Aurora OS," is human-written, with AI tools assisting in documentation, GitHub integrations, bug testing, and roadmap tracking.

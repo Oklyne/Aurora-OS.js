@@ -26,6 +26,64 @@ import { useAppStorage } from '../hooks/useAppStorage';
 import { useElementSize } from '../hooks/useElementSize';
 import { FileIcon } from './ui/FileIcon';
 
+interface BreadcrumbPillProps {
+  name: string;
+  isLast: boolean;
+  accentColor: string;
+  onClick: () => void;
+  onDrop: (e: React.DragEvent) => void;
+}
+
+function BreadcrumbPill({ name, isLast, accentColor, onClick, onDrop }: BreadcrumbPillProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!isDragOver) setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    onDrop(e);
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`px-3 py-1 rounded-md text-sm transition-all duration-200 border ${isLast ? 'font-medium' : 'font-normal'
+        }`}
+      style={{
+        backgroundColor: isDragOver || isHovered || isLast
+          ? accentColor
+          : 'rgba(55, 65, 81, 0.5)', // Default gray-700/50
+        borderColor: isDragOver || isHovered || isLast
+          ? accentColor
+          : 'transparent',
+        color: isDragOver || isHovered || isLast
+          ? '#FFFFFF' // Always white for primary button style
+          : 'rgba(255, 255, 255, 0.9)',
+        cursor: isLast ? 'default' : 'pointer',
+        boxShadow: isDragOver || isHovered || isLast ? '0 1px 2px 0 rgb(0 0 0 / 0.05)' : 'none',
+        fontWeight: isLast ? 600 : 400
+      }}
+    >
+      {name}
+    </button>
+  );
+}
+
 export function FileManager({ initialPath }: { initialPath?: string }) {
   const { accentColor } = useAppContext();
   // Drag and Drop Logic
@@ -52,8 +110,9 @@ export function FileManager({ initialPath }: { initialPath?: string }) {
   useEffect(() => {
     const contents = listDirectory(currentPath);
     if (contents) {
-      // Sort: directories first, then files, both alphabetically
-      const sorted = [...contents].sort((a, b) => {
+      // Filter dotfiles and sort
+      const filtered = contents.filter(item => !item.name.startsWith('.'));
+      const sorted = [...filtered].sort((a, b) => {
         if (a.type === 'directory' && b.type !== 'directory') return -1;
         if (a.type !== 'directory' && b.type === 'directory') return 1;
         return a.name.localeCompare(b.name);
@@ -101,12 +160,11 @@ export function FileManager({ initialPath }: { initialPath?: string }) {
     }
   }, [history, historyIndex]);
 
-  // Get current directory name
-  const getCurrentDirName = useCallback(() => {
+  /* const getCurrentDirName = useCallback(() => {
     if (currentPath === '/') return '/';
     const parts = currentPath.split('/');
     return parts[parts.length - 1] || '/';
-  }, [currentPath]);
+  }, [currentPath]); */
 
   const handleDragStart = useCallback((e: React.DragEvent, item: FileNode) => {
     console.log('Drag started:', item.id);
@@ -308,8 +366,77 @@ export function FileManager({ initialPath }: { initialPath?: string }) {
         >
           <ChevronRight className="w-4 h-4 text-white/50" />
         </button>
-        <div className="ml-3 px-3 py-1 bg-gray-700/50 rounded-md text-sm text-white/90">
-          {getCurrentDirName()}
+
+
+        {/* Breadcrumbs */}
+        <div className="ml-3 flex items-center gap-1.5 overflow-x-auto no-scrollbar mask-linear-fade">
+          {currentPath === '/' ? (
+            <BreadcrumbPill
+              name="/"
+              isLast={true}
+              accentColor={accentColor}
+              onClick={() => { }}
+              onDrop={(e) => handleSidebarDrop(e, '/')}
+            />
+          ) : (
+            (() => {
+              const segments = currentPath.split('/').filter(Boolean);
+
+              // Responsive Logic
+              const CONTROLS_WIDTH = 140; // Width of buttons + padding (Tuned to prevent premature hiding)
+              const availableWidth = Math.max(0, width - CONTROLS_WIDTH);
+
+              // Calculate width of each segment (approximate)
+              // 8px per char + 24px padding + 6px gap
+              const segmentWidths = segments.map(s => s.length * 8 + 30);
+
+              let visibleSegmentsCount = 0;
+              let currentWidth = 0;
+
+              // Add from end (right) to start (left)
+              for (let i = segments.length - 1; i >= 0; i--) {
+                if (currentWidth + segmentWidths[i] <= availableWidth) {
+                  currentWidth += segmentWidths[i];
+                  visibleSegmentsCount++;
+                } else if (visibleSegmentsCount === 0) {
+                  // Ensure at least the last one is shown if possible, or force it
+                  visibleSegmentsCount = 1;
+                  break;
+                } else {
+                  break;
+                }
+              }
+
+              // Always show at least one segment if path is not root
+              visibleSegmentsCount = Math.max(1, visibleSegmentsCount);
+
+              const startIdx = segments.length - visibleSegmentsCount;
+              const visibleSegments = segments.slice(startIdx);
+              const hiddenSegments = segments.slice(0, startIdx);
+
+              // Reconstruct path for the visible segments
+              // The first visible segment's full path depends on previous hidden ones
+              let cumulativePath = hiddenSegments.length > 0
+                ? '/' + hiddenSegments.join('/')
+                : '';
+
+              return visibleSegments.map((segment, index) => {
+                cumulativePath += `/${segment}`;
+                const isLast = index === visibleSegments.length - 1;
+                const path = cumulativePath; // Close over value
+                return (
+                  <BreadcrumbPill
+                    key={path}
+                    name={segment}
+                    isLast={isLast}
+                    accentColor={accentColor}
+                    onClick={() => navigateTo(path)}
+                    onDrop={(e) => handleSidebarDrop(e, path)}
+                  />
+                );
+              });
+            })()
+          )}
         </div>
       </div>
 
@@ -334,7 +461,7 @@ export function FileManager({ initialPath }: { initialPath?: string }) {
           <Search className="w-4 h-4 text-white/50" />
         </button>
       </div>
-    </div>
+    </div >
   );
 
   // State for container drop zone visual feedback

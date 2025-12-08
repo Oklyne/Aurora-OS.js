@@ -11,6 +11,7 @@ interface WindowProps {
   onFocus: () => void;
   onUpdateState: (updates: Partial<WindowState>) => void;
   isFocused: boolean;
+  bounds?: string;
 }
 
 import { useThemeColors } from '../hooks/useThemeColors';
@@ -23,7 +24,8 @@ function WindowComponent({
   onMaximize,
   onFocus,
   onUpdateState,
-  isFocused
+  isFocused,
+  bounds
 }: WindowProps) {
   const { titleBarBackground } = useThemeColors();
   const { disableShadows } = useAppContext();
@@ -56,6 +58,7 @@ function WindowComponent({
     <Rnd
       size={{ width, height }}
       position={{ x: window.isMinimized ? 48 : x, y: window.isMinimized ? 900 : y }}
+      bounds={bounds}
       onDragStop={(_e, d) => {
         onUpdateState({ position: { x: d.x, y: d.y } });
       }}

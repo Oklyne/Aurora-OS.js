@@ -27,7 +27,7 @@ const dockApps = [
 
 function DockComponent({ onOpenApp, onRestoreWindow, onFocusWindow, windows }: DockProps) {
   const { dockBackground, blurStyle } = useThemeColors();
-  const { reduceMotion, disableShadows, disableGradients } = useAppContext();
+  const { reduceMotion, disableShadows, disableGradients, accentColor } = useAppContext();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [shouldHide, setShouldHide] = useState(false);
 
@@ -179,7 +179,11 @@ function DockComponent({ onOpenApp, onRestoreWindow, onFocusWindow, windows }: D
                       return (
                         <div
                           key={i}
-                          className={`w-1 h-1 rounded-full ${isVisibleDot ? 'bg-cyan-400 shadow-[0_0_4px_rgba(34,211,238,0.8)]' : 'bg-white'}`}
+                          className={`w-1 h-1 rounded-full ${isVisibleDot ? '' : 'bg-white'}`}
+                          style={isVisibleDot ? {
+                            backgroundColor: accentColor,
+                            boxShadow: `0 0 4px ${accentColor}`
+                          } : undefined}
                         />
                       );
                     })}
