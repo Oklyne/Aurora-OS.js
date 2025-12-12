@@ -57,7 +57,9 @@ export function Settings() {
     disableShadows,
     setDisableShadows,
     disableGradients,
-    setDisableGradients
+    setDisableGradients,
+    devMode,
+    setDevMode
   } = useAppContext();
   const [customColor, setCustomColor] = useState(accentColor);
 
@@ -402,6 +404,17 @@ export function Settings() {
                 <span className="text-white/60">Build</span>
                 <span className="text-white">React 19 + Vite 7</span>
               </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
+              <div>
+                <span className="text-white block">Developer Mode</span>
+                <span className="text-white/60 text-sm">Enable advanced tools and debug features</span>
+              </div>
+              <Checkbox
+                checked={devMode}
+                onCheckedChange={(checked) => setDevMode(checked === true)}
+              />
             </div>
           </div>
 

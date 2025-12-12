@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
     // Soft memory keys (preferences, safe to forget)
     SETTINGS: 'aurora-os-settings',
     DESKTOP_ICONS: 'aurora-os-desktop-icons',
+    SOUND: 'aurora-os-sound-settings',
     APP_PREFIX: 'aurora-os-app-', // Pattern for app-specific storage
 
     // Hard memory keys (core data, dangerous to forget)
@@ -28,8 +29,12 @@ export function softReset(): void {
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key) {
-            // Settings and desktop icons
-            if (key === STORAGE_KEYS.SETTINGS || key === STORAGE_KEYS.DESKTOP_ICONS) {
+            // Settings, desktop icons, and sound
+            if (
+                key === STORAGE_KEYS.SETTINGS ||
+                key === STORAGE_KEYS.DESKTOP_ICONS ||
+                key === STORAGE_KEYS.SOUND
+            ) {
                 keysToRemove.push(key);
             }
             // App-specific storage
@@ -65,6 +70,7 @@ export function hardReset(): void {
             if (
                 key === STORAGE_KEYS.SETTINGS ||
                 key === STORAGE_KEYS.DESKTOP_ICONS ||
+                key === STORAGE_KEYS.SOUND ||
                 key === STORAGE_KEYS.FILESYSTEM ||
                 key.startsWith(STORAGE_KEYS.APP_PREFIX)
             ) {
@@ -110,6 +116,7 @@ export function getStorageStats(): {
             } else if (
                 key === STORAGE_KEYS.SETTINGS ||
                 key === STORAGE_KEYS.DESKTOP_ICONS ||
+                key === STORAGE_KEYS.SOUND ||
                 key.startsWith(STORAGE_KEYS.APP_PREFIX)
             ) {
                 softKeys++;

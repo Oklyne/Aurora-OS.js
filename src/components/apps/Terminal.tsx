@@ -215,7 +215,7 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
               return (
                 <div key={node.id} className="flex items-center gap-2">
                   <div className="w-4 h-4 shrink-0 inline-flex items-center justify-center">
-                    <FileIcon name={node.name} type={node.type} accentColor={accentColor} />
+                    <FileIcon name={node.name} type={node.type} accentColor={accentColor} isEmpty={node.children?.length === 0} />
                   </div>
                   <span>{node.type === 'directory' ? node.name + '/' : node.name}</span>
                 </div>

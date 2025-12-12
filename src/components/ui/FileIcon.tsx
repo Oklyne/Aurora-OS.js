@@ -4,6 +4,7 @@ import {
     Music,
     Image,
     Film,
+    Trash,
     Trash2,
     Settings
 } from 'lucide-react';
@@ -15,9 +16,10 @@ interface FileIconProps {
     type: 'directory' | 'file' | 'folder';
     accentColor?: string;
     className?: string; // For sizing, e.g. "w-8 h-8"
+    isEmpty?: boolean;
 }
 
-export function FileIcon({ name, type, accentColor = '#3b82f6', className = "w-full h-full" }: FileIconProps) {
+export function FileIcon({ name, type, accentColor = '#3b82f6', className = "w-full h-full", isEmpty }: FileIconProps) {
     const { disableGradients } = useAppContext();
     const isDirectory = type === 'directory' || type === 'folder';
 
@@ -40,9 +42,11 @@ export function FileIcon({ name, type, accentColor = '#3b82f6', className = "w-f
     if (isDirectory) {
         // Special folder icons (Trash, Config) now use Gradients on Stroke
         if (name === '.Trash' || name === 'Config') {
+            const TrashIcon = isEmpty ? Trash : Trash2;
+
             if (disableGradients) {
                 return name === '.Trash'
-                    ? <Trash2 className={className} strokeWidth={1.5} style={{ ...iconStyle, color: accentColor }} />
+                    ? <TrashIcon className={className} strokeWidth={1.5} style={{ ...iconStyle, color: accentColor }} />
                     : <Settings className={className} strokeWidth={1.5} style={{ ...iconStyle, color: accentColor }} />;
             }
             return (
@@ -56,7 +60,7 @@ export function FileIcon({ name, type, accentColor = '#3b82f6', className = "w-f
                         </defs>
                     </svg>
                     {name === '.Trash'
-                        ? <Trash2 className={className} strokeWidth={1.5} style={{ ...iconStyle, stroke: `url(#${strokeGradientId})` }} />
+                        ? <TrashIcon className={className} strokeWidth={1.5} style={{ ...iconStyle, stroke: `url(#${strokeGradientId})` }} />
                         : <Settings className={className} strokeWidth={1.5} style={{ ...iconStyle, stroke: `url(#${strokeGradientId})` }} />
                     }
                 </>

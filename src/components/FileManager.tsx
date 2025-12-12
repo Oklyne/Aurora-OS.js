@@ -13,6 +13,7 @@ import {
   Monitor,
   Music,
   Image,
+  Trash,
   Trash2,
   Settings,
   Home
@@ -25,6 +26,7 @@ import { useFileSystem, FileNode } from './FileSystemContext';
 import { useAppStorage } from '../hooks/useAppStorage';
 import { useElementSize } from '../hooks/useElementSize';
 import { FileIcon } from './ui/FileIcon';
+import { feedback } from '../lib/soundFeedback';
 
 interface BreadcrumbPillProps {
   name: string;
@@ -88,7 +90,11 @@ export function FileManager({ initialPath }: { initialPath?: string }) {
   const { accentColor } = useAppContext();
   // Drag and Drop Logic
   const [dragTargetId, setDragTargetId] = useState<string | null>(null);
-  const { listDirectory, homePath, moveNodeById } = useFileSystem();
+  const { listDirectory, homePath, moveNodeById, resolvePath } = useFileSystem();
+
+  // Determine if Trash is empty for sidebar icon
+  const trashItems = listDirectory(`${homePath}/.Trash`);
+  const isTrashEmpty = !trashItems || trashItems.length === 0;
 
   const [containerRef, { width }] = useElementSize();
   const isMobile = width < 450;
@@ -134,6 +140,7 @@ export function FileManager({ initialPath }: { initialPath?: string }) {
     });
     setHistoryIndex(prev => prev + 1);
     setCurrentPath(path);
+    feedback.folder();
   }, [historyIndex]);
 
   // Handle item double-click
@@ -339,7 +346,7 @@ export function FileManager({ initialPath }: { initialPath?: string }) {
         items: [
           {
             id: 'trash',
-            icon: Trash2,
+            icon: isTrashEmpty ? Trash : Trash2,
             label: 'Trash',
             action: () => navigateTo(`${homePath}/.Trash`),
             ...sidebarDropProps(`${homePath}/.Trash`)
@@ -380,7 +387,9 @@ export function FileManager({ initialPath }: { initialPath?: string }) {
             />
           ) : (
             (() => {
-              const segments = currentPath.split('/').filter(Boolean);
+              // Convert to absolute path to avoid '~' which breaks navigation
+              const resolvedPath = resolvePath(currentPath);
+              const segments = resolvedPath.split('/').filter(Boolean);
 
               // Responsive Logic
               const CONTROLS_WIDTH = 140; // Width of buttons + padding (Tuned to prevent premature hiding)
@@ -424,10 +433,12 @@ export function FileManager({ initialPath }: { initialPath?: string }) {
                 cumulativePath += `/${segment}`;
                 const isLast = index === visibleSegments.length - 1;
                 const path = cumulativePath; // Close over value
+                const displayName = segment === '.Trash' ? 'Trash' : segment;
+
                 return (
                   <BreadcrumbPill
                     key={path}
-                    name={segment}
+                    name={displayName}
                     isLast={isLast}
                     accentColor={accentColor}
                     onClick={() => navigateTo(path)}
@@ -527,7 +538,7 @@ export function FileManager({ initialPath }: { initialPath?: string }) {
               ${dragTargetId === item.id ? 'bg-blue-500/20 ring-2 ring-blue-500' : ''}`}
             >
               <div className="w-20 h-20 flex items-center justify-center pointer-events-none">
-                <FileIcon name={item.name} type={item.type} accentColor={accentColor} />
+                <FileIcon name={item.name} type={item.type} accentColor={accentColor} isEmpty={item.children?.length === 0} />
               </div>
               <div className="w-full text-center pointer-events-none">
                 <div className="text-sm text-white/90 truncate px-1 w-full">
@@ -559,7 +570,7 @@ export function FileManager({ initialPath }: { initialPath?: string }) {
               ${dragTargetId === item.id ? 'bg-blue-500/20 ring-1 ring-blue-500' : ''}`}
             >
               <div className="w-8 h-8 flex items-center justify-center shrink-0 pointer-events-none">
-                <FileIcon name={item.name} type={item.type} accentColor={accentColor} />
+                <FileIcon name={item.name} type={item.type} accentColor={accentColor} isEmpty={item.children?.length === 0} />
               </div>
               <div className="flex-1 text-left min-w-0 pointer-events-none">
                 <div className="text-sm text-white/90 truncate">{item.name}</div>

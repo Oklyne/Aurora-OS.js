@@ -4,18 +4,21 @@ import { MenuBar } from './components/MenuBar';
 import { Dock } from './components/Dock';
 import { Window } from './components/Window';
 import { FileManager } from './components/FileManager';
-import { NotificationCenter } from './components/NotificationCenter';
+
 import { Settings } from './components/Settings';
 import { Photos } from './components/apps/Photos';
 import { Music } from './components/apps/Music';
 import { Messages } from './components/apps/Messages';
 import { Browser } from './components/apps/Browser';
 import { Terminal } from './components/apps/Terminal';
+import { DevCenter } from './components/apps/DevCenter';
 import { PlaceholderApp } from './components/apps/PlaceholderApp';
 import { AppProvider } from './components/AppContext';
 import { FileSystemProvider, useFileSystem, type FileSystemContextType } from './components/FileSystemContext';
 import { Toaster } from './components/ui/sonner';
 import { getGridConfig, gridToPixel, pixelToGrid, findNextFreeCell, gridPosToKey, rearrangeGrid, type GridPosition } from './utils/gridSystem';
+import { notify } from './lib/notifications';
+import { feedback } from './lib/soundFeedback';
 
 export interface WindowState {
   id: string;
@@ -65,7 +68,7 @@ function loadIconPositions(): Record<string, GridPosition> {
 
 function OS() {
   const [windows, setWindows] = useState<WindowState[]>([]);
-  const [showNotifications, setShowNotifications] = useState(false);
+
   const topZIndexRef = useRef(100);
 
   // Track window size for responsive icon positioning
@@ -81,6 +84,15 @@ function OS() {
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Global click sound
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      feedback.click();
+    };
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
   }, []);
 
   const { listDirectory, resolvePath, getNodeAtPath, moveNodeById } = useFileSystem() as unknown as FileSystemContextType;
@@ -146,6 +158,8 @@ function OS() {
   const openWindowRef = useRef<(type: string, data?: { path?: string }) => void>(() => { });
 
   const openWindow = useCallback((type: string, data?: { path?: string }) => {
+    feedback.windowOpen();
+    //notify.system('success', type, 'Application opened successfully');
     let content: React.ReactNode;
     let title: string;
 
@@ -178,6 +192,14 @@ function OS() {
         title = 'Terminal';
         content = <Terminal onLaunchApp={(id, args) => openWindowRef.current(id, { path: args?.[0] })} />;
         break;
+      case 'trash':
+        title = 'Trash';
+        content = <FileManager initialPath="~/.Trash" />;
+        break;
+      case 'dev-center':
+        title = 'DEV Center';
+        content = <DevCenter />;
+        break;
       default:
         title = type.charAt(0).toUpperCase() + type.slice(1);
         content = <PlaceholderApp title={title} />;
@@ -205,10 +227,14 @@ function OS() {
   }, [openWindow]);
 
   const closeWindow = useCallback((id: string) => {
+    feedback.windowClose();
+    //notify.system('success', id, 'Application closed successfully');
     setWindows(prevWindows => prevWindows.filter(w => w.id !== id));
   }, []);
 
   const minimizeWindow = useCallback((id: string) => {
+    //feedback.click();
+    notify.system('success', id, 'Application minimized successfully');
     setWindows(prevWindows => {
       const updated = prevWindows.map(w =>
         w.id === id ? { ...w, isMinimized: true } : w
@@ -231,6 +257,8 @@ function OS() {
   }, []);
 
   const maximizeWindow = useCallback((id: string) => {
+    //feedback.click();
+    notify.system('success', id, 'Application maximized successfully');
     setWindows(prevWindows => prevWindows.map(w =>
       w.id === id ? { ...w, isMaximized: !w.isMaximized } : w
     ));
@@ -315,9 +343,7 @@ function OS() {
     }
   }, [desktopIcons, iconGridPositions, windowSize, resolvePath, moveNodeById]);
 
-  const toggleNotifications = useCallback(() => {
-    setShowNotifications(prev => !prev);
-  }, []);
+
 
   const handleIconDoubleClick = useCallback((iconId: string) => {
     const icon = desktopIcons.find(i => i.id === iconId);
@@ -329,6 +355,7 @@ function OS() {
     if (node?.type === 'directory') {
       openWindow('finder', { path });
     }
+
   }, [desktopIcons, resolvePath, getNodeAtPath, openWindow]);
 
   const focusedWindowId = useMemo(() => {
@@ -352,8 +379,8 @@ function OS() {
       />
 
       <MenuBar
-        onNotificationsClick={toggleNotifications}
         focusedApp={focusedAppType}
+        onOpenApp={openWindow}
       />
 
       <Dock
@@ -377,10 +404,7 @@ function OS() {
         />
       ))}
 
-      <NotificationCenter
-        isOpen={showNotifications}
-        onClose={() => setShowNotifications(false)}
-      />
+
 
       <Toaster />
     </div>

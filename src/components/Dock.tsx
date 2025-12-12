@@ -1,9 +1,10 @@
-import { FolderOpen, Settings, Mail, Calendar, Image, Music, Video, Terminal, Globe, MessageSquare } from 'lucide-react';
+import { FolderOpen, Settings, Mail, Calendar, Image, Music, Video, Terminal, Globe, MessageSquare, Trash2, Trash } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState, useEffect, useMemo, memo } from 'react';
 import type { WindowState } from '../App';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { useAppContext } from './AppContext';
+import { useFileSystem } from './FileSystemContext';
 
 interface DockProps {
   onOpenApp: (appType: string) => void;
@@ -23,11 +24,18 @@ const dockApps = [
   { id: 'browser', icon: Globe, label: 'Browser', color: 'from-cyan-500 to-blue-600', solid: '#06b6d4' },
   { id: 'terminal', icon: Terminal, label: 'Terminal', color: 'from-gray-700 to-gray-900', solid: '#374151' },
   { id: 'settings', icon: Settings, label: 'Settings', color: 'from-gray-500 to-gray-600', solid: '#6b7280' },
+  { id: 'trash', icon: Trash2, label: 'Trash', color: 'from-gray-400 to-gray-500', solid: '#9ca3af' },
 ];
 
 function DockComponent({ onOpenApp, onRestoreWindow, onFocusWindow, windows }: DockProps) {
   const { dockBackground, blurStyle } = useThemeColors();
   const { reduceMotion, disableShadows, disableGradients, accentColor } = useAppContext();
+  const { listDirectory, homePath } = useFileSystem();
+
+  // Determine if Trash is empty for Dock icon
+  const trashItems = listDirectory(`${homePath}/.Trash`);
+  const isTrashEmpty = !trashItems || trashItems.length === 0;
+
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [shouldHide, setShouldHide] = useState(false);
 
@@ -151,57 +159,72 @@ function DockComponent({ onOpenApp, onRestoreWindow, onFocusWindow, windows }: D
               ? { backgroundColor: app.solid }
               : {};
 
+            const IconComponent = app.id === 'trash'
+              ? (isTrashEmpty ? Trash : Trash2)
+              : app.icon;
+
             return (
-              <motion.button
-                key={app.id}
-                aria-label={app.label}
-                className={`relative w-12 h-12 rounded-xl ${bgClass} flex items-center justify-center text-white 
-                  ${!disableShadows ? 'shadow-lg hover:shadow-xl' : ''} transition-all`}
-                style={style}
-                onMouseEnter={() => setHoveredIndex(index)}
-                onMouseLeave={() => setHoveredIndex(null)}
-                onClick={(e) => handleAppClick(app.id, e)}
-                whileHover={reduceMotion ? { scale: 1, x: 0 } : { scale: 1.1, x: 8 }}
-                whileTap={reduceMotion ? { scale: 1 } : { scale: 0.95 }}
-              >
-                <app.icon className="w-6 h-6" />
-
-                {/* Running indicator dot(s) */}
-                {hasWindows && (
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-                    {/* Show up to 3 dots */}
-                    {Array.from({ length: Math.min(windowCount, 3) }).map((_, i) => {
-                      const visibleCount = appWindows.filter(w => !w.isMinimized).length;
-                      // If i < visibleCount -> Bright (Visible)
-                      // If i >= visibleCount -> Dim (Minimized)
-                      const isVisibleDot = i < visibleCount;
-
-                      return (
-                        <div
-                          key={i}
-                          className={`w-1 h-1 rounded-full ${isVisibleDot ? '' : 'bg-white'}`}
-                          style={isVisibleDot ? {
-                            backgroundColor: accentColor,
-                            boxShadow: `0 0 4px ${accentColor}`
-                          } : undefined}
-                        />
-                      );
-                    })}
-                  </div>
+              <div key={app.id} className="flex flex-col items-center gap-2">
+                {/* Horizontal Separator before Terminal */}
+                {app.id === 'terminal' && (
+                  <div className="w-8 h-px bg-white/20 my-1 mx-auto" />
                 )}
 
-                {hoveredIndex === index && (
-                  <motion.div
-                    className="absolute left-full ml-3 px-3 py-1.5 bg-gray-900/90 backdrop-blur-md text-white text-xs rounded-lg whitespace-nowrap border border-white/20"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    {app.label}
-                    {hasWindows && ` (${windowCount})`}
-                  </motion.div>
-                )}
-              </motion.button>
+                <motion.button
+                  aria-label={app.label}
+                  className={`relative w-12 h-12 rounded-xl ${bgClass} flex items-center justify-center text-white 
+                    ${!disableShadows ? 'shadow-lg hover:shadow-xl' : ''} transition-all`}
+                  style={style}
+                  onMouseEnter={() => {
+                    setHoveredIndex(index);
+                  }}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  onClick={(e) => {
+                    handleAppClick(app.id, e);
+                  }}
+                  whileHover={reduceMotion ? { scale: 1, x: 0 } : { scale: 1.1, x: 8 }}
+                  whileTap={reduceMotion ? { scale: 1 } : { scale: 0.95 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                >
+                  <IconComponent className="w-6 h-6" />
+
+                  {/* Running indicator dot(s) */}
+                  {hasWindows && (
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                      {/* Show up to 3 dots */}
+                      {Array.from({ length: Math.min(windowCount, 3) }).map((_, i) => {
+                        const visibleCount = appWindows.filter(w => !w.isMinimized).length;
+                        // If i < visibleCount -> Bright (Visible)
+                        // If i >= visibleCount -> Dim (Minimized)
+                        const isVisibleDot = i < visibleCount;
+
+                        return (
+                          <div
+                            key={i}
+                            className={`w-1 h-1 rounded-full ${isVisibleDot ? '' : 'bg-white'}`}
+                            style={isVisibleDot ? {
+                              backgroundColor: accentColor,
+                              boxShadow: `0 0 4px ${accentColor}`
+                            } : undefined}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {hoveredIndex === index && (
+                    <motion.div
+                      className="absolute left-full ml-3 px-3 py-1.5 bg-gray-900/90 backdrop-blur-md text-white text-xs rounded-lg whitespace-nowrap border border-white/20"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      {app.label}
+                      {hasWindows && ` (${windowCount})`}
+                    </motion.div>
+                  )}
+                </motion.button>
+              </div>
             );
           })}
         </div>

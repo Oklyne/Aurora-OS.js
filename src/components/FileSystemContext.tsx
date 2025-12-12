@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
-import { toast } from 'sonner';
+import { notify } from '../lib/notifications';
 
 import {
   FileNode,
@@ -245,12 +245,12 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
 
     // Safety Checks: Prevent recursive moves
     if (nodeToMove.id === destParent.id) {
-      toast.error('Operation blocked: Cannot move a directory into itself')
+      notify.system('error', 'FileSystem', 'Operation blocked: Cannot move a directory into itself');
       //console.warn('Operation blocked: Cannot move a directory into itself');
       return false;
     }
     if (isDescendant(nodeToMove, destParent.id)) {
-      toast.error('Operation blocked: Cannot move a directory into its own descendant');
+      notify.system('error', 'FileSystem', 'Operation blocked: Cannot move a directory into its own descendant');
       //console.warn('Operation blocked: Cannot move a directory into its own descendant');
       return false;
     }
