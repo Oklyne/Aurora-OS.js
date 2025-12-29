@@ -14,6 +14,7 @@ export const STORAGE_KEYS = {
     SOUND: 'aurora-os-sound-settings',
     APP_PREFIX: 'aurora-os-app-', // Pattern for app-specific storage
     WINDOWS_PREFIX: 'aurora-os-windows-', // Window sessions
+    SESSION_PREFIX: 'aurora-session-', // Ephemeral session state (last paths, etc)
     SYSTEM_CONFIG: 'aurora-system-config', // Global system settings (Dev Mode, etc)
 
     // Hard memory keys (core data, dangerous to forget)
@@ -32,7 +33,8 @@ const MEMORY_CONFIG = {
         prefixes: [
             STORAGE_KEYS.SETTINGS,
             STORAGE_KEYS.APP_PREFIX,
-            STORAGE_KEYS.WINDOWS_PREFIX
+            STORAGE_KEYS.WINDOWS_PREFIX,
+            STORAGE_KEYS.SESSION_PREFIX
         ]
     },
     hard: {
@@ -159,11 +161,31 @@ export function hasSavedSession(username: string): boolean {
 }
 
 /**
- * Clear a user's saved window session
+ * Clear a user's session (Windows + Ephemeral Data)
+ * Called on Logout
  */
 export function clearSession(username: string): void {
-    const key = `${STORAGE_KEYS.WINDOWS_PREFIX}${username}`;
-    localStorage.removeItem(key);
-    console.log(`Cleared session for user: ${username}`);
+    // 1. Clear Window Session
+    const windowKey = `${STORAGE_KEYS.WINDOWS_PREFIX}${username}`;
+    localStorage.removeItem(windowKey);
+
+    // 2. Clear Session Data (Prefix includes username to support multiple users?)
+    // Note: STORAGE_KEYS.SESSION_PREFIX is 'aurora-session-'. 
+    // We should assume session keys might be 'aurora-session-USERNAME-key' or just global if single user active.
+    // For now, let's aggressively clear all session keys if we can't filter by user, 
+    // OR we standardize session keys to include username.
+
+    const keysToRemove: string[] = [];
+    const userSessionPrefix = `${STORAGE_KEYS.SESSION_PREFIX}${username}-`;
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(userSessionPrefix)) {
+            keysToRemove.push(key);
+        }
+    }
+
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    console.log(`Cleared session for user: ${username} (${keysToRemove.length + 1} keys)`);
 }
 

@@ -14,6 +14,7 @@ import { DevCenter } from './apps/DevCenter';
 import { PlaceholderApp } from './apps/PlaceholderApp';
 import { useAppContext } from './AppContext';
 import { useFileSystem, type FileSystemContextType } from './FileSystemContext';
+import { useMusic } from './MusicContext';
 import { Toaster } from './ui/sonner';
 import { getGridConfig, gridToPixel, pixelToGrid, findNextFreeCell, gridPosToKey, rearrangeGrid, type GridPosition } from '../utils/gridSystem';
 import { feedback } from '../services/soundFeedback';
@@ -48,6 +49,7 @@ function loadIconPositions(): Record<string, GridPosition> {
 
 export default function OS() {
     const { activeUser } = useAppContext();
+    const { playFile } = useMusic();
 
     // Track window size for responsive icon positioning
     const [windowSize, setWindowSize] = useState({
@@ -167,7 +169,7 @@ export default function OS() {
         switch (type) {
             case 'finder':
                 title = 'Finder';
-                content = <FileManager initialPath={data?.path} />;
+                content = <FileManager initialPath={data?.path} onOpenApp={openWindowRef.current} />;
                 break;
             case 'settings':
                 title = 'System Settings';
@@ -196,7 +198,7 @@ export default function OS() {
                 break;
             case 'trash':
                 title = 'Trash';
-                content = <FileManager initialPath="~/.Trash" />;
+                content = <FileManager initialPath="~/.Trash" onOpenApp={openWindowRef.current} />;
                 break;
             case 'dev-center':
                 title = 'DEV Center';
@@ -303,9 +305,16 @@ export default function OS() {
 
         if (node?.type === 'directory') {
             openWindow('finder', { path });
+        } else if (node?.type === 'file') {
+            const lowerName = icon.name.toLowerCase();
+            if (lowerName.endsWith('.mp3') || lowerName.endsWith('.wav') || lowerName.endsWith('.flac')) {
+                playFile(path);
+                // openWindowRef is stable and calls useWindowManager's openWindow which now handles focus
+                openWindowRef.current('music');
+            }
         }
 
-    }, [desktopIcons, resolvePath, getNodeAtPath, openWindow]);
+    }, [desktopIcons, resolvePath, getNodeAtPath, openWindow, playFile]);
 
     const focusedWindowId = useMemo(() => {
         if (windows.length === 0) return null;

@@ -10,6 +10,7 @@ import { getComplementaryColor } from '../utils/colors';
 import { cn } from './ui/utils';
 import { GlassButton } from './ui/GlassButton';
 import { GlassInput } from './ui/GlassInput';
+import { useSessionStorage } from '../hooks/useSessionStorage';
 import pkg from '../../package.json';
 import defaultWallpaper from '../assets/images/background.png';
 import orbitWallpaper from '../assets/images/wallpaper-orbit.png';
@@ -59,15 +60,16 @@ const presetColors = [
 ];
 
 export function Settings() {
-  const [activeSection, setActiveSection] = useState(() => {
-    // Check for pending section request (Deep Linking)
+  const [activeSection, setActiveSection] = useSessionStorage('settings-active-section', 'appearance');
+
+  // Check for pending section request (Deep Linking)
+  useEffect(() => {
     const pending = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('settings-pending-section') : null;
     if (pending) {
       sessionStorage.removeItem('settings-pending-section');
-      return pending;
+      setActiveSection(pending);
     }
-    return 'appearance';
-  });
+  }, [setActiveSection]);
 
   // Listen for external requests to change section (when app is already open)
   useEffect(() => {
@@ -81,7 +83,7 @@ export function Settings() {
     return () => {
       window.removeEventListener('aurora-open-settings-section', handleOpenSection as EventListener);
     };
-  }, []);
+  }, [setActiveSection]);
   const {
     accentColor,
     setAccentColor,

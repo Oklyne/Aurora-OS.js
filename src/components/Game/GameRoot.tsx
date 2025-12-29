@@ -5,7 +5,7 @@ import { BootSequence } from './BootSequence';
 import { useFileSystem } from '../../components/FileSystemContext';
 import { useAppContext } from '../../components/AppContext';
 
-import { STORAGE_KEYS } from '../../utils/memory';
+import { STORAGE_KEYS, hardReset } from '../../utils/memory';
 import { updateStoredVersion } from '../../utils/migrations';
 
 // The "Actual Game" being played is passed as children (The OS Desktop)
@@ -26,14 +26,22 @@ export function GameRoot({ children }: GameRootProps) {
     }, []);
 
     const handleNewGame = () => {
-        if (confirm('Start New Game? This will wipe all existing data.')) {
-            resetFileSystem();
-            updateStoredVersion(); // Mark session as valid
-            setIsLocked(false);
-            // Wiping filesystem clears users, so currentUser becomes null.
-            // AppContent will render LoginScreen because currentUser is null.
-            setGameState('BOOT');
-        }
+        hardReset(); // Fully wipe (Filesystem + App Memory)
+        // resetFileSystem is redundant as hardReset wipes the key, but we can call it if needed for in-memory state reset?
+        // Actually hardReset wipes storage but doesn't necessarily reload the page immediately here?
+        // The previous logic relied on setGameState('BOOT') without reload.
+        // If we don't reload, the in-memory state of apps (like MusicContext) might persist if they don't re-read storage.
+        // BUT, GameRoot unmounts children during transition?
+        // When setGameState('BOOT') happens, 'GAMEPLAY' (and thus AppContent) is unmounted. 
+        // This force-unmounts all apps. When 'GAMEPLAY' returns, apps remount and read empty storage.
+        // So we just need hardReset().
+
+        // However, we must ensure memory state (like useFileSystem in-memory cache) is also cleared.
+        resetFileSystem(); // Keep this for in-game memory sync if needed
+
+        updateStoredVersion(); // Mark session as valid
+        setIsLocked(false);
+        setGameState('BOOT');
     };
 
     const handleContinue = () => {

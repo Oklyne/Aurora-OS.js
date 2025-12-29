@@ -135,3 +135,4 @@ win-unpacked
 *.sln
 *.sw?
 .agent/
+.DS_Store

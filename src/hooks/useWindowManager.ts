@@ -93,10 +93,30 @@ export function useWindowManager(
 
     const openWindow = useCallback(
         (type: string, data?: { path?: string }) => {
-            feedback.windowOpen();
-            const { content, title } = getAppContent(type, data);
+            const MULTI_INSTANCE_APPS = ['finder', 'terminal', 'browser'];
 
             setWindows((prevWindows) => {
+                // Check for existing instance if not multi-instance
+                if (!MULTI_INSTANCE_APPS.includes(type)) {
+                    const existing = prevWindows.find(w => w.type === type);
+                    if (existing) {
+                        feedback.click(); // Sound on focus
+
+                        // Focus and Update Data (e.g. change song)
+                        topZIndexRef.current += 1;
+                        const newZIndex = topZIndexRef.current;
+
+                        return prevWindows.map(w =>
+                            w.id === existing.id
+                                ? { ...w, zIndex: newZIndex, isMinimized: false, data }
+                                : w
+                        );
+                    }
+                }
+
+                feedback.windowOpen();
+                const { content, title } = getAppContent(type, data);
+
                 topZIndexRef.current += 1;
                 const newZIndex = topZIndexRef.current;
                 const newWindow: WindowState = {

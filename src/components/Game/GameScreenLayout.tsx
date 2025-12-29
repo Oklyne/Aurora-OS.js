@@ -45,7 +45,7 @@ export function GameScreenLayout({ children, footerActions, className = "", zInd
                     <div className="flex items-center gap-4 text-white/50 text-sm tracking-[0.2em] uppercase">
                         <span>v{pkg.version}</span>
                         <span>•</span>
-                        <span>Simulation Ready</span>
+                        <span>Nova Republika</span>
                     </div>
                 </div>
 
@@ -81,7 +81,7 @@ export function GameScreenLayout({ children, footerActions, className = "", zInd
                         <>
                             <span>Aurora OS</span>
                             <span>•</span>
-                            <span>Simulation System</span>
+                            <span>Nova Republika IS</span>
                         </>
                     )}
                 </div>

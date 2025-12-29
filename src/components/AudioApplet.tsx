@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Volume2, VolumeX, MousePointer2, Bell, AppWindow } from 'lucide-react';
+import { Volume2, VolumeX, MousePointer2, Bell, AppWindow, Play, Pause, SkipBack, SkipForward, Music2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Slider } from './ui/slider';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './ui/accordion';
 import { soundManager, type SoundCategory } from '../services/sound';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { useAppContext } from './AppContext';
+import { useMusic } from './MusicContext';
 
 function useAudioMixer() {
     const [state, setState] = useState({
@@ -13,6 +14,7 @@ function useAudioMixer() {
         system: soundManager.getVolume('system'),
         ui: soundManager.getVolume('ui'),
         feedback: soundManager.getVolume('feedback'),
+        music: soundManager.getVolume('music'), // Add music
         isMuted: soundManager.getMuted(),
     });
 
@@ -23,6 +25,7 @@ function useAudioMixer() {
                 system: soundManager.getVolume('system'),
                 ui: soundManager.getVolume('ui'),
                 feedback: soundManager.getVolume('feedback'),
+                music: soundManager.getVolume('music'),
                 isMuted: soundManager.getMuted(),
             });
         });
@@ -33,10 +36,13 @@ function useAudioMixer() {
 }
 
 export function AudioApplet() {
-    const { master, system, ui, feedback, isMuted } = useAudioMixer();
+    const { master, system, ui, feedback, music, isMuted } = useAudioMixer(); // consume music
     const { blurStyle, getBackgroundColor } = useThemeColors();
     const { disableShadows, accentColor, reduceMotion } = useAppContext();
     const [isOpen, setIsOpen] = useState(false);
+
+    // Music Context
+    const { currentSong, isPlaying, togglePlay, playNext, playPrev, isMusicOpen } = useMusic();
 
     const handleVolumeChange = (category: SoundCategory, value: number[]) => {
         soundManager.setVolume(category, value[0]);
@@ -90,6 +96,46 @@ export function AudioApplet() {
                     </button>
                 </div>
 
+                {/* Now Playing Section */}
+                {isMusicOpen && currentSong && (
+                    <div className="p-4 border-b border-white/10 flex items-center gap-4 bg-white/5">
+                        {/* Artwork/Icon */}
+                        <div
+                            className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
+                            style={{ backgroundColor: accentColor }}
+                        >
+                            <Music2 className="w-6 h-6 text-white" />
+                        </div>
+
+                        {/* Text Info */}
+                        <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate leading-tight">
+                                {currentSong.title}
+                            </div>
+                            <div className="text-white/60 text-xs truncate mt-0.5">
+                                {currentSong.artist}
+                            </div>
+                        </div>
+
+                        {/* Controls */}
+                        <div className="flex items-center gap-2">
+                            <button onClick={playPrev} className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                                <SkipBack className="w-4 h-4 fill-current" />
+                            </button>
+                            <button onClick={togglePlay} className="p-2 bg-white text-black hover:scale-105 active:scale-95 rounded-full transition-all shadow-md">
+                                {isPlaying ? (
+                                    <Pause className="w-4 h-4 fill-current" />
+                                ) : (
+                                    <Play className="w-4 h-4 fill-current ml-0.5" />
+                                )}
+                            </button>
+                            <button onClick={() => playNext()} className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                                <SkipForward className="w-4 h-4 fill-current" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Sliders */}
                 <div className="p-4 space-y-6">
                     {/* Master */}
@@ -117,6 +163,25 @@ export function AudioApplet() {
                             </AccordionTrigger>
                             <AccordionContent className="!px-6 pb-6 pt-3">
                                 <div className="space-y-6">
+                                    {/* Music Stream */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-white/90 flex items-center gap-2">
+                                                <Music2 className="w-4 h-4 text-white/50" />
+                                                Music
+                                            </span>
+                                            <span className="text-white/50">{Math.round(music * 100)}%</span>
+                                        </div>
+                                        <Slider
+                                            value={[music]}
+                                            max={1}
+                                            step={0.01}
+                                            // Tie music slider to soundManager using 'music' category
+                                            onValueChange={(val) => handleVolumeChange('music', val)}
+                                            className={sliderClass}
+                                        />
+                                    </div>
+
                                     {/* System */}
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between text-sm">

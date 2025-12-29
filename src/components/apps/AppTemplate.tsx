@@ -132,7 +132,10 @@ export function AppTemplate({
                             {item.label}
                           </span>
                           {item.badge && (
-                            <span className="text-xs text-white/40 transition-opacity duration-200">
+                            <span
+                              className="text-xs transition-opacity duration-200 font-medium"
+                              style={{ color: 'var(--accent-color)' }}
+                            >
                               {item.badge}
                             </span>
                           )}

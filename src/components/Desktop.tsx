@@ -250,54 +250,96 @@ function DesktopComponent({ onDoubleClick, icons, onUpdateIconPosition, onIconDo
       )}
 
       {/* Desktop Icons */}
-      {icons.map((icon) => {
-        // Calculate temporary position if being dragged
-        const isDragging = draggingIcons.includes(icon.id);
-        const position = isDragging
-          ? { x: icon.position.x + dragDelta.x, y: icon.position.y + dragDelta.y }
-          : icon.position;
-
-        return (
-          <div
-            key={icon.id}
-            draggable
-            onDragStart={(e) => handleNativeDragStart(e, icon)}
-            onDragEnd={handleDragEnd}
-            className={`absolute flex flex-col items-center gap-1 p-2 rounded-lg cursor-pointer select-none 
-            ${(!reduceMotion && !isDragging) ? 'transition-all duration-75' : ''} 
-            ${selectedIcons.has(icon.id) ? 'bg-white/20 backdrop-blur-sm ring-1 ring-white/30' : 'hover:bg-white/5'}`}
-            style={{
-              left: position.x,
-              top: position.y,
-              width: '100px',
-              // Disable transition during drag for instant feel
-              transition: isDragging ? 'none' : undefined
-            }}
-            onMouseDown={(e) => handleIconMouseDown(e, icon.id)}
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-              onIconDoubleClick(icon.id);
-            }}
-          >
-            <div className={`relative w-14 h-14 mb-1 ${!disableShadows ? 'drop-shadow-lg' : ''}`}>
-              <FileIcon
-                name={icon.name}
-                type={icon.type === 'folder' ? 'directory' : 'file'}
-                accentColor={accentColor}
-                className="w-full h-full"
-                isEmpty={icon.isEmpty}
-              />
-            </div>
-
-            <div className={`text-[11px] leading-tight text-white text-center px-2 py-0.5 rounded
-            ${!disableShadows ? 'drop-shadow-md text-shadow-sm' : ''} truncate w-full`}>
-              {icon.name}
-            </div>
-          </div>
-        );
-      })}
+      {icons.map((icon) => (
+        <DesktopIconItem
+          key={icon.id}
+          icon={icon}
+          selected={selectedIcons.has(icon.id)}
+          dragging={draggingIcons.includes(icon.id)}
+          dragDelta={dragDelta}
+          reduceMotion={reduceMotion}
+          disableShadows={disableShadows}
+          accentColor={accentColor}
+          onMouseDown={handleIconMouseDown}
+          onDragStart={handleNativeDragStart}
+          onDragEnd={handleDragEnd}
+          onDoubleClick={onIconDoubleClick}
+        />
+      ))}
     </div>
   );
 }
+
+// Memoized Icon Component to prevent unnecessary re-renders
+interface DesktopIconItemProps {
+  icon: DesktopIcon;
+  selected: boolean;
+  dragging: boolean;
+  dragDelta: { x: number; y: number };
+  reduceMotion: boolean;
+  disableShadows: boolean;
+  accentColor: string;
+  onMouseDown: (e: React.MouseEvent, id: string) => void;
+  onDragStart: (e: React.DragEvent, icon: DesktopIcon) => void;
+  onDragEnd: (e: React.DragEvent) => void;
+  onDoubleClick: (id: string) => void;
+}
+
+const DesktopIconItem = memo(function DesktopIconItem({
+  icon,
+  selected,
+  dragging,
+  dragDelta,
+  reduceMotion,
+  disableShadows,
+  accentColor,
+  onMouseDown,
+  onDragStart,
+  onDragEnd,
+  onDoubleClick
+}: DesktopIconItemProps) {
+  // Calculate temporary position if being dragged
+  const position = dragging
+    ? { x: icon.position.x + dragDelta.x, y: icon.position.y + dragDelta.y }
+    : icon.position;
+
+  return (
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, icon)}
+      onDragEnd={onDragEnd}
+      className={`absolute flex flex-col items-center gap-1 p-2 rounded-lg cursor-pointer select-none 
+      ${(!reduceMotion && !dragging) ? 'transition-all duration-75' : ''} 
+      ${selected ? 'bg-white/20 backdrop-blur-sm ring-1 ring-white/30' : 'hover:bg-white/5'}`}
+      style={{
+        left: position.x,
+        top: position.y,
+        width: '100px',
+        // Disable transition during drag for instant feel
+        transition: dragging ? 'none' : undefined
+      }}
+      onMouseDown={(e) => onMouseDown(e, icon.id)}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onDoubleClick(icon.id);
+      }}
+    >
+      <div className={`relative w-14 h-14 mb-1 ${!disableShadows ? 'drop-shadow-lg' : ''}`}>
+        <FileIcon
+          name={icon.name}
+          type={icon.type === 'folder' ? 'directory' : 'file'}
+          accentColor={accentColor}
+          className="w-full h-full"
+          isEmpty={icon.isEmpty}
+        />
+      </div>
+
+      <div className={`text-[11px] leading-tight text-white text-center px-2 py-0.5 rounded
+      ${!disableShadows ? 'drop-shadow-md text-shadow-sm' : ''} truncate w-full`}>
+        {icon.name}
+      </div>
+    </div>
+  );
+});
 
 export const Desktop = memo(DesktopComponent);

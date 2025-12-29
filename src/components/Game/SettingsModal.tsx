@@ -140,7 +140,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
                 </div>
 
                 <div className="mt-8 text-center text-xs text-white/20 font-mono">
-                    Aurora OS v0.7.3 • BIOS Configuration
+                    Aurora OS v0.7.3-audioPatch • BIOS Configuration
                 </div>
             </motion.div>
         </div>

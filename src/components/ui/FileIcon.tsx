@@ -115,7 +115,7 @@ export function FileIcon({ name, type, accentColor = '#3b82f6', className = "w-f
     const lowerName = name.toLowerCase();
 
     if (lowerName.endsWith('.mp3') || lowerName.endsWith('.wav') || lowerName.endsWith('.flac')) {
-        return renderIconWithGradient(Music, 'text-pink-400');
+        return renderIconWithGradient(Music);
     }
     if (lowerName.endsWith('.jpg') || lowerName.endsWith('.png') || lowerName.endsWith('.gif') || lowerName.endsWith('.webp')) {
         return renderIconWithGradient(Image, 'text-green-400');

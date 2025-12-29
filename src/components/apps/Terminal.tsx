@@ -1,4 +1,4 @@
-import { useRef, useEffect, ReactNode } from 'react';
+import { useRef, useEffect, ReactNode, useMemo, memo } from 'react';
 import { AppTemplate } from './AppTemplate';
 import pkg from '../../../package.json';
 import { useTerminalLogic } from '../../hooks/useTerminalLogic';
@@ -54,7 +54,7 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
     );
   };
 
-  const renderInputOverlay = () => {
+  const inputOverlay = useMemo(() => {
     const tokens: ReactNode[] = [];
     const regex = /("([^"]*)")|('([^']*)')|(\s+)|([^\s"']+)/g;
     let match;
@@ -100,7 +100,7 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
         <span className="text-white/40">{ghostText}</span>
       </span>
     );
-  };
+  }, [input, isCommandValid, shades, ghostText]);
 
   const content = (
     <div
@@ -116,22 +116,12 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
       <div className="text-gray-400 mb-2">{pkg.build.productName} terminal [v{pkg.version}]</div>
 
       {history.map((item, i) => (
-        <div key={i} className="mb-2">
-          <div className="flex items-center gap-2" style={{ color: item.accentColor || '#4ade80' }}>
-            <span>{item.user || activeTerminalUser}@{`aurora:${item.path.replace(homePath, '~')}${(item.user || activeTerminalUser) === 'root' ? '#' : '$'}`}</span>
-            <span className="text-gray-100">{item.command}</span>
-          </div>
-          <div className="pl-0">
-            {item.output.map((line, lineIndex) => (
-              <div
-                key={lineIndex}
-                className={item.error ? 'text-red-400' : 'text-white/80'}
-              >
-                {line}
-              </div>
-            ))}
-          </div>
-        </div>
+        <TerminalHistoryItem
+          key={i}
+          item={item}
+          homePath={homePath}
+          activeUser={activeTerminalUser}
+        />
       ))}
 
       <div className="flex relative">
@@ -139,7 +129,7 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
 
         <div className="relative flex-1 group">
           <div className="absolute inset-0 top-0 left-0 pointer-events-none select-none whitespace-pre break-all">
-            {renderInputOverlay()}
+            {inputOverlay}
           </div>
           <input
             ref={inputRef}
@@ -159,3 +149,44 @@ export function Terminal({ onLaunchApp }: TerminalProps) {
 
   return <AppTemplate content={content} hasSidebar={false} contentClassName="overflow-hidden bg-[#1e1e1e]/90" />;
 }
+
+// Memoized History Item
+interface TerminalHistoryItemProps {
+  item: {
+    command: string;
+    output: ReactNode[];
+    path: string;
+    user?: string;
+    error?: boolean;
+    accentColor?: string;
+  };
+  homePath: string;
+  activeUser: string;
+}
+
+const TerminalHistoryItem = memo(function TerminalHistoryItem({ item, homePath, activeUser }: TerminalHistoryItemProps) {
+  const displayPath = item.path.replace(homePath, '~');
+  const user = item.user || activeUser;
+  const promptSymbol = user === 'root' ? '#' : '$';
+
+  return (
+    <div className="mb-2">
+      <div className="flex items-center gap-2" style={{ color: item.accentColor || '#4ade80' }}>
+        <span>
+          {user}@{`aurora:${displayPath}${promptSymbol}`}
+        </span>
+        <span className="text-gray-100">{item.command}</span>
+      </div>
+      <div className="pl-0">
+        {item.output.map((line, lineIndex) => (
+          <div
+            key={lineIndex}
+            className={item.error ? 'text-red-400' : 'text-white/80'}
+          >
+            {line}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});

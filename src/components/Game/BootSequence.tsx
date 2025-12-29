@@ -58,7 +58,7 @@ export function BootSequence({ onComplete }: BootSequenceProps) {
 
             // BIOS / Hardware
             const hw = getHardwareInfo();
-            add('kernel', `AURORA OS version ${pkg.version}-generic (build@${pkg.name})`);
+            add('kernel', `${pkg.build.productName} version ${pkg.version}-generic (build@${pkg.name})`);
             add('kernel', `Command line: BOOT_IMAGE=/boot/vmlinuz-${pkg.version} root=UUID=7427-42A9 ro quiet splash`);
             add('kernel', `Detected CPU: ${hw.cpuCores} Cores (${navigator.hardwareConcurrency ? 'SMP' : 'UP'} enabled)`);
             add('kernel', `Memory: ${hw.memory ? hw.memory + ' GiB' : 'Reserved'} System RAM`);

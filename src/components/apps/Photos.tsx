@@ -2,6 +2,7 @@ import { Heart, Folder, Clock, MapPin, User, Image, Grid3x3, List } from 'lucide
 import { AppTemplate } from './AppTemplate';
 import { ResponsiveGrid } from '../ui/ResponsiveGrid';
 import { useAppStorage } from '../../hooks/useAppStorage';
+import { useSessionStorage } from '../../hooks/useSessionStorage';
 import { cn } from '../ui/utils';
 
 const photosSidebar = {
@@ -34,8 +35,8 @@ const mockPhotos = Array.from({ length: 24 }, (_, i) => ({
 
 export function Photos() {
   // Persisted state
+  const [activeCategory, setActiveCategory] = useSessionStorage('photos-active-category', 'all');
   const [appState, setAppState] = useAppStorage('photos', {
-    activeCategory: 'all',
     viewMode: 'grid',
   });
 
@@ -83,8 +84,8 @@ export function Photos() {
       sidebar={photosSidebar}
       toolbar={toolbar}
       content={content}
-      activeItem={appState.activeCategory}
-      onItemClick={(id) => setAppState(s => ({ ...s, activeCategory: id }))}
+      activeItem={activeCategory}
+      onItemClick={(id) => setActiveCategory(id)}
       contentClassName="overflow-y-auto"
       minContentWidth={500}
     />

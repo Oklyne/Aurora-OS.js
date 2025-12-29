@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState, useRef } from 'react';
 import { Maximize2 } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import type { WindowState } from '../hooks/useWindowManager';
@@ -28,7 +28,11 @@ function WindowComponent({
   bounds
 }: WindowProps) {
   const { titleBarBackground } = useThemeColors();
-  const { disableShadows } = useAppContext();
+  const { disableShadows, reduceMotion, blurEnabled } = useAppContext();
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Drag threshold refs
+  const dragRef = useRef<{ startX: number; startY: number; timer: NodeJS.Timeout | null }>({ startX: 0, startY: 0, timer: null });
 
   // Calculate position/size based on state
   const x = window.isMaximized ? 0 : window.position.x;
@@ -57,18 +61,25 @@ function WindowComponent({
 
   const minimizeTarget = window.isMinimized ? (() => {
     const target = getMinimizeTarget();
-    // We need to center the window relative to the target point.
-    // Since we are not changing the width/height of the Rnd container (perf optimization),
-    // we must subtract half the window size from the target coordinates
-    // so that the center of the window aligns with the target.
-    const currentWidth = window.isMaximized ? (typeof globalThis !== 'undefined' ? globalThis.innerWidth : 1000) : window.size.width;
-    const currentHeight = window.isMaximized ? (typeof globalThis !== 'undefined' ? globalThis.innerHeight - 28 : 800) : window.size.height;
-
     return {
-      x: target.x - currentWidth / 2,
-      y: target.y - currentHeight / 2
+      x: target.x - (window.isMaximized ? (typeof globalThis !== 'undefined' ? globalThis.innerWidth : 1000) : window.size.width) / 2,
+      y: target.y - (window.isMaximized ? (typeof globalThis !== 'undefined' ? globalThis.innerHeight - 28 : 800) : window.size.height) / 2
     };
   })() : { x: 0, y: 0 };
+
+  const getTransform = () => {
+    if (window.isMinimized) return 'scale(0)';
+    if (window.isMaximized) return 'scale(1)';
+    // Lift effect while dragging (if motion enabled)
+    return isDragging && !reduceMotion ? 'scale(1.02)' : 'scale(1)';
+  };
+
+  const clearDragTimer = () => {
+    if (dragRef.current.timer) {
+      clearTimeout(dragRef.current.timer);
+      dragRef.current.timer = null;
+    }
+  };
 
   return (
     <Rnd
@@ -78,7 +89,30 @@ function WindowComponent({
         y: window.isMinimized ? minimizeTarget.y : y
       }}
       bounds={bounds}
+      onDragStart={(_e, d) => {
+        // Don't set isDragging immediately to avoiding "lift" on click
+        dragRef.current.startX = d.x;
+        dragRef.current.startY = d.y;
+
+        // If held for 150ms, assume intention to drag
+        dragRef.current.timer = setTimeout(() => {
+          setIsDragging(true);
+        }, 150);
+      }}
+      onDrag={(_e, d) => {
+        if (!isDragging) {
+          const dx = Math.abs(d.x - dragRef.current.startX);
+          const dy = Math.abs(d.y - dragRef.current.startY);
+          // Threshold of 5px to trigger visual lift
+          if (dx > 5 || dy > 5) {
+            clearDragTimer();
+            setIsDragging(true);
+          }
+        }
+      }}
       onDragStop={(_e, d) => {
+        clearDragTimer();
+        setIsDragging(false);
         onUpdateState({ position: { x: d.x, y: d.y } });
       }}
       onResizeStop={(_e, _direction, ref, _delta, position) => {
@@ -100,33 +134,41 @@ function WindowComponent({
         zIndex: window.zIndex,
         display: 'flex',
         flexDirection: 'column',
-        // Transition for smooth maximize/minimize if we want manual CSS transitions
-        transition: window.isMaximized || window.isMinimized ? 'all 0.3s cubic-bezier(0.32, 0.72, 0, 1)' : 'none',
-        // Start minimized styles
+        // Transition for smooth maximize/minimize 
+        // We set to none for standard state to ensure resize/drag is instant
+        transition: window.isMaximized || window.isMinimized
+          ? 'all 0.3s cubic-bezier(0.32, 0.72, 0, 1)'
+          : 'none',
         pointerEvents: window.isMinimized ? 'none' : 'auto',
       }}
       className="absolute"
     >
       <div
         className={cn(
-          "w-full h-full flex flex-col overflow-hidden transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          "w-full h-full flex flex-col overflow-hidden",
+          "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
           "rounded-xl border border-white/20",
-          !disableShadows && "shadow-2xl",
-          (!isFocused && !window.isMinimized) && "brightness-75 saturate-50"
+          (!disableShadows) && "shadow-2xl",
+          (!isFocused && !window.isMinimized) && "brightness-75 saturate-50",
+          (isDragging && !disableShadows) && "shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]"
         )}
         style={{
           background: !isFocused ? '#171717' : undefined,
           opacity: window.isMinimized ? 0 : 1,
-          transform: window.isMinimized ? 'scale(0)' : 'scale(1)',
+          transform: getTransform(),
+          // Combined blur logic
+          backdropFilter: blurEnabled ? (isDragging ? 'blur(20px)' : 'blur(12px)') : 'none',
         }}
       >
         {/* Title Bar */}
         <div
-          className="window-title-bar h-11 backdrop-blur-md border-b border-white/10 flex items-center justify-between px-4 cursor-move select-none shrink-0"
+          className={cn(
+            "window-title-bar h-11 border-b border-white/10 flex items-center justify-between px-4 cursor-move select-none shrink-0",
+          )}
           style={{ background: titleBarBackground }}
         >
           <div className="flex items-center gap-2 " onMouseDown={(e) => e.stopPropagation()}>
-            {/* stopPropagation on controls so they don't trigger drag if clicked */}
+            {/* stopPropagation on controls */}
             <button
               className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
               onClick={onClose}
@@ -152,11 +194,14 @@ function WindowComponent({
 
         {/* Content */}
         {/* We allow propagation so checking clicks on content triggers Rnd's onMouseDown={onFocus} */}
-        <div className="flex-1 overflow-auto cursor-default">
+        <div
+          className="flex-1 overflow-auto cursor-default"
+          style={{ pointerEvents: isDragging ? 'none' : 'auto' }}
+        >
           {window.content}
         </div>
       </div>
-    </Rnd>
+    </Rnd >
   );
 }
 

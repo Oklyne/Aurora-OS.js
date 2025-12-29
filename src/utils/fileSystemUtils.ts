@@ -1,4 +1,6 @@
 import pkg from '../../package.json';
+import startupSound from '../assets/sounds/Runway Electric.mp3';
+import startupSound2 from '../assets/sounds/Lo-Fi Girl.mp3';
 
 export interface FileNode {
     id: string;
@@ -154,7 +156,16 @@ export function createUserHome(username: string, permissions: string = 'drwxr-x-
             { name: 'Documents', type: 'directory', children: [], owner: username, permissions: 'drwxr-xr-x' },
             { name: 'Downloads', type: 'directory', children: [], owner: username, permissions: 'drwxr-xr-x' },
             { name: 'Pictures', type: 'directory', children: [], owner: username, permissions: 'drwxr-xr-x' },
-            { name: 'Music', type: 'directory', children: [], owner: username, permissions: 'drwxr-xr-x' },
+            {
+                name: 'Music',
+                type: 'directory',
+                children: [
+                    { name: 'Runway Electric.mp3', type: 'file', content: startupSound, size: 2048, owner: username, permissions: '-rw-r--r--' },
+                    { name: 'Lo-Fi Girl.mp3', type: 'file', content: startupSound2, size: 2048, owner: username, permissions: '-rw-r--r--' }
+                ],
+                owner: username,
+                permissions: 'drwxr-xr-x'
+            },
             { name: 'Videos', type: 'directory', children: [], owner: username, permissions: 'drwxr-xr-x' },
             { name: '.Config', type: 'directory', children: [], owner: username, permissions: 'drwx------' },
             { name: '.Trash', type: 'directory', children: [], owner: username, permissions: 'drwx------' },
@@ -324,7 +335,16 @@ export const initialFileSystem: any = {
                             ],
                         },
                         { name: 'Pictures', type: 'directory', children: [{ name: 'Screenshots', type: 'directory', children: [], owner: 'user' }], owner: 'user', permissions: 'drwxr-xr-x' },
-                        { name: 'Music', type: 'directory', children: [], owner: 'user', permissions: 'drwxr-xr-x' },
+                        {
+                            name: 'Music',
+                            type: 'directory',
+                            children: [
+                                { name: 'Runway Electric.mp3', type: 'file', content: startupSound, size: 2048, owner: 'user', permissions: '-rw-r--r--' },
+                                { name: 'Lo-Fi Girl.mp3', type: 'file', content: startupSound2, size: 2048, owner: 'user', permissions: '-rw-r--r--' }
+                            ],
+                            owner: 'user',
+                            permissions: 'drwxr-xr-x'
+                        },
                         { name: 'Videos', type: 'directory', children: [], owner: 'user', permissions: 'drwxr-xr-x' },
                         { name: '.Config', type: 'directory', children: [], owner: 'user', permissions: 'drwx------' },
                         { name: '.Trash', type: 'directory', children: [], owner: 'user', permissions: 'drwx------' },

@@ -1,4 +1,4 @@
-# Aurora OS.js [![Version](https://img.shields.io/badge/Version-v0.7.2_patch4-blue)](https://github.com/mental-os/Aurora-OS.js) [![GitHub Pages](https://github.com/mental-os/Aurora-OS.js/actions/workflows/deploy.yml/badge.svg)](https://github.com/mental-os/Aurora-OS.js/actions/workflows/deploy.yml) [![Dependabot](https://github.com/mental-os/Aurora-OS.js/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/mental-os/Aurora-OS.js/actions/workflows/dependabot/dependabot-updates) [![Build](https://github.com/mental-os/Aurora-OS.js/actions/workflows/ci.yml/badge.svg)](https://github.com/mental-os/Aurora-OS.js/actions/workflows/ci.yml)
+# Aurora OS.js [![Version](https://img.shields.io/badge/Version-v0.7.3--audioPatch-blue)](https://github.com/mental-os/Aurora-OS.js) [![GitHub Pages](https://github.com/mental-os/Aurora-OS.js/actions/workflows/deploy.yml/badge.svg)](https://github.com/mental-os/Aurora-OS.js/actions/workflows/deploy.yml) [![Dependabot](https://github.com/mental-os/Aurora-OS.js/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/mental-os/Aurora-OS.js/actions/workflows/dependabot/dependabot-updates) [![Build](https://github.com/mental-os/Aurora-OS.js/actions/workflows/ci.yml/badge.svg)](https://github.com/mental-os/Aurora-OS.js/actions/workflows/ci.yml)
 
 A modern, web-based desktop operating system interface built with React, Tailwind CSS, and Radix UI.
 
@@ -26,10 +26,13 @@ A modern, web-based desktop operating system interface built with React, Tailwin
 ## Tech Stack
 
 - **Framework**: React 19 (Vite 7)
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS v4
 - **UI Primitives**: Radix UI
 - **Icons**: Lucide React
 - **Animation**: Motion (Framer Motion)
+- **Audio**: Howler.js
+- **Charts**: Recharts
+- **Components**: Sonner (Toasts), Vaul (Drawers), CMDK, React Day Picker
 - **Testing**: Vitest
 
 ## Getting Started
@@ -57,7 +60,11 @@ npm test
 
 ## Release Notes
 
-### v0.7.3
+### v0.7.3-audioPatch
+- **Audio Persistence Patch**:
+    - **Zombie Track Protection**: Fixed an issue where "ghost" tracks would persist after a hard reset.
+    - **Session Recovery**: The Music app now correctly remembers the active tab across browser refreshes but clears it on logout (similar to Finder).
+    - **Storage Standardization**: Migrated Music app storage to use standardized `aurora-os-app-` prefixes for reliable wiping.
 - **Boot Generation Engine**:
     - **Dynamic Parsing**: The boot sequence now analyzes `package.json` in real-time to generate authentic log entries based on your actual dependencies (`react`, `framer-motion`, etc.).
     - **Hardware Probing**: Integrated `hardware.ts` to safe-probe the host machine, displaying real CPU core counts, RAM, and specific GPU models (e.g., "Apple M1", "NVIDIA RTX") in the logs.
@@ -73,12 +80,14 @@ npm test
     - **Lazy Loading**: The core `OS` component is now lazily loaded to prioritize the Boot Sequence performance.
     - **Robustness**: Implemented defensive error boundaries and type-safety fixes for the hardware probing logic.
 
+[View to-do list](TO-DO.md)
 [View full version history](HISTORY.md)
 
 # License & Others
 
 - **Licensed as**: [AGPL-3.0e](LICENSE)
-- **AI Disclosure**: This project, "Aurora OS," is human-written, with AI tools assisting in documentation, GitHub integrations, bug testing, and roadmap tracking.
+- **Open-source code**: [OPEN-SOURCE.md](OPEN-SOURCE.md)
+- **AI Disclosure**: This project, "Aurora OS," is human-written, with AI tools assisting in documentation, GitHub integrations, bug testing, and roadmap tracking. As soon as this project is ready for release, all the AI tools will be removed and the generated content (audio, images, etc.) will be human-created.
 
 # Community
 Soon

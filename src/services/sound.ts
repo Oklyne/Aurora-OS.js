@@ -30,9 +30,9 @@ const SOUNDS = {
 type SoundType = keyof typeof SOUNDS;
 
 // Define sound categories
-export type SoundCategory = 'master' | 'system' | 'ui' | 'feedback';
+export type SoundCategory = 'master' | 'system' | 'ui' | 'feedback' | 'music';
 
-const SOUND_CATEGORIES: Record<SoundType, Exclude<SoundCategory, 'master'>> = {
+const SOUND_CATEGORIES: Record<SoundType, Exclude<SoundCategory, 'master' | 'music'>> = {
     success: 'system',
     warning: 'system',
     error: 'system',
@@ -48,6 +48,7 @@ interface VolumeState {
     system: number;
     ui: number;
     feedback: number;
+    music: number;
 }
 
 const DEFAULT_VOLUMES: VolumeState = {
@@ -55,6 +56,7 @@ const DEFAULT_VOLUMES: VolumeState = {
     system: 1,
     ui: 0.5,
     feedback: 0.25,
+    music: 0.75,
 };
 
 const STORAGE_KEY = STORAGE_KEYS.SOUND;

@@ -16,18 +16,37 @@ export interface CommandHistory {
 
 const PATH = ['/bin', '/usr/bin'];
 
-// Helper to safely parse command input respecting quotes
+// Helper to safely parse command input respecting quotes and concatenation
 const parseCommandInput = (input: string): { command: string; args: string[]; redirectOp: string | null; redirectPath: string | null } => {
-    const regex = /"([^"]*)"|'([^']*)'|(>>?)|([^\s"']+)/g;
     const tokens: string[] = [];
-    let match;
+    let currentToken = '';
+    let inQuote: "'" | '"' | null = null;
 
-    while ((match = regex.exec(input)) !== null) {
-        if (match[1] !== undefined) tokens.push(match[1]); // Double quote content
-        else if (match[2] !== undefined) tokens.push(match[2]); // Single quote content
-        else if (match[3] !== undefined) tokens.push(match[3]); // Redirection op
-        else if (match[4] !== undefined) tokens.push(match[4]); // Word
-        else tokens.push(match[0]); // Fallback
+    for (let i = 0; i < input.length; i++) {
+        const char = input[i];
+
+        if (inQuote) {
+            if (char === inQuote) {
+                inQuote = null;
+            } else {
+                currentToken += char;
+            }
+        } else {
+            if (char === '"' || char === "'") {
+                inQuote = char;
+            } else if (/\s/.test(char)) {
+                if (currentToken.length > 0) {
+                    tokens.push(currentToken);
+                    currentToken = '';
+                }
+            } else {
+                currentToken += char;
+            }
+        }
+    }
+
+    if (currentToken.length > 0) {
+        tokens.push(currentToken);
     }
 
     if (tokens.length === 0) return { command: '', args: [], redirectOp: null, redirectPath: null };
@@ -231,7 +250,12 @@ export function useTerminalLogic(onLaunchApp?: (appId: string, args: string[]) =
         if (candidates.length === 0) return;
 
         if (candidates.length === 1) {
-            const completion = candidates[0];
+            let completion = candidates[0];
+            // Auto-quote if contains spaces
+            if (completion.includes(' ') && !completion.startsWith('"') && !completion.startsWith("'")) {
+                completion = `"${completion}"`;
+            }
+
             let newInput = input;
             if (isCommand) {
                 newInput = completion + ' ';
@@ -512,9 +536,9 @@ export function useTerminalLogic(onLaunchApp?: (appId: string, args: string[]) =
                         command: '',
                         output: [
                             <div className="text-red-500 font-bold bg-red-950/30 p-2 border border-red-500/50 rounded mb-2" >
-                            CRITICAL ERROR: SYSTEM INTEGRITY COMPROMISED < br />
-                            The system has detected unauthorized modifications to core identity files.< br />
-                            Entering Safe Mode: Write access disabled.Root access disabled.
+                                CRITICAL ERROR: SYSTEM INTEGRITY COMPROMISED < br />
+                                The system has detected unauthorized modifications to core identity files.< br />
+                                Entering Safe Mode: Write access disabled.Root access disabled.
                             </div>
                         ],
                         path: currentPath || '~',

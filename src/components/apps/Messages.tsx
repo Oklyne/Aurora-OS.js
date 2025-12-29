@@ -2,7 +2,7 @@ import { AppTemplate } from './AppTemplate';
 import { MessageSquare, Users, Archive, Star, Send, Search } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '../AppContext';
-import { useAppStorage } from '../../hooks/useAppStorage';
+import { useSessionStorage } from '../../hooks/useSessionStorage';
 import { useElementSize } from '../../hooks/useElementSize';
 import { cn } from '../ui/utils';
 import { GlassInput } from '../ui/GlassInput';
@@ -40,9 +40,9 @@ const mockMessages = [
 
 export function Messages() {
   // Persisted state
-  const [appState, setAppState] = useAppStorage('messages', {
-    activeCategory: 'all',
-  });
+  // Persisted state
+  // We keep 'messages' app storage for future features (e.g. draft text), but move navigation to session
+  const [activeCategory, setActiveCategory] = useSessionStorage('messages-active-category', 'all');
 
 
   const [selectedConversationId, setSelectedConversationId] = useState<string | number>(mockConversations[0].id);
@@ -210,8 +210,8 @@ export function Messages() {
         sidebar={messagesSidebar}
         content={content}
         hasSidebar={showSidebar}
-        activeItem={appState.activeCategory}
-        onItemClick={(id) => setAppState(s => ({ ...s, activeCategory: id }))}
+        activeItem={activeCategory}
+        onItemClick={(id) => setActiveCategory(id)}
         minContentWidth={0} // Allow full collapse
       />
     </div>

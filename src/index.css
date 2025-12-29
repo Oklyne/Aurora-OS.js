@@ -313,6 +313,11 @@ html {
 :root[data-disable-gradients="true"] .bg-gradient-to-tr,
 :root[data-disable-gradients="true"] .bg-gradient-to-bl,
 :root[data-disable-gradients="true"] .bg-gradient-to-tl {
-    background-image: none !important;
     background-color: var(--accent-user) !important;
+}
+
+/* Music Visualization Animation */
+@keyframes music-bar {
+    0%, 100% { height: 2px; }
+    50% { height: 12px; }
 }

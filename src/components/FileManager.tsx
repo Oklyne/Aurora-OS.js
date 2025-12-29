@@ -23,8 +23,10 @@ import { useAppContext } from './AppContext';
 import { AppTemplate } from './apps/AppTemplate';
 import { ResponsiveGrid } from './ui/ResponsiveGrid';
 import { useFileSystem, FileNode } from './FileSystemContext';
+import { useMusic } from './MusicContext';
 import { checkPermissions } from '../utils/fileSystemUtils';
 import { useAppStorage } from '../hooks/useAppStorage';
+import { useSessionStorage } from '../hooks/useSessionStorage';
 import { useElementSize } from '../hooks/useElementSize';
 import { FileIcon } from './ui/FileIcon';
 import { cn } from './ui/utils';
@@ -88,8 +90,9 @@ function BreadcrumbPill({ name, isLast, accentColor, onClick, onDrop }: Breadcru
   );
 }
 
-export function FileManager({ initialPath }: { initialPath?: string }) {
+export function FileManager({ initialPath, onOpenApp }: { initialPath?: string; onOpenApp?: (id: string, args?: any) => void }) {
   const { accentColor } = useAppContext();
+  const { playFile } = useMusic();
   // Drag and Drop Logic
   const [dragTargetId, setDragTargetId] = useState<string | null>(null);
   const { listDirectory, homePath, moveNodeById, getNodeAtPath, moveToTrash, resolvePath, users, currentUser } = useFileSystem();
@@ -97,18 +100,29 @@ export function FileManager({ initialPath }: { initialPath?: string }) {
   const [containerRef, { width }] = useElementSize();
   const isMobile = width < 450;
 
-  // Persisted state (viewMode survives refresh)
+  // Persisted state (viewMode survives refresh AND Logout -> User Setting)
   const [appState, setAppState] = useAppStorage('finder', {
     viewMode: 'grid' as 'grid' | 'list',
   });
 
   // Each FileManager instance has its own navigation state (independent windows, NOT persisted)
-  const startPath = initialPath || homePath;
+  // Edit: User requested persistence but ONLY for Session (Cleared on Logout).
+  // We use a shared "last path" preference for the DEFAULT opening path.
+  const [lastPath, setLastPath] = useSessionStorage('finder-last-path', homePath);
+
+  const startPath = initialPath || lastPath;
   const [currentPath, setCurrentPath] = useState(startPath);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [items, setItems] = useState<FileNode[]>([]);
   const [history, setHistory] = useState<string[]>([startPath]);
   const [historyIndex, setHistoryIndex] = useState(0);
+
+  // Sync current path to storage (only if it matches user expectation of "Session")
+  useEffect(() => {
+    if (currentPath) {
+      setLastPath(currentPath);
+    }
+  }, [currentPath, setLastPath]);
 
   // Load directory contents when path changes
   useEffect(() => {
@@ -183,8 +197,15 @@ export function FileManager({ initialPath }: { initialPath?: string }) {
     if (item.type === 'directory') {
       const newPath = currentPath === '/' ? `/${item.name}` : `${currentPath}/${item.name}`;
       navigateTo(newPath);
+    } else if (item.type === 'file') {
+      const lowerName = item.name.toLowerCase();
+      if (lowerName.endsWith('.mp3') || lowerName.endsWith('.wav') || lowerName.endsWith('.flac')) {
+        const fullPath = currentPath === '/' ? `/${item.name}` : `${currentPath}/${item.name}`;
+        playFile(fullPath);
+        if (onOpenApp) onOpenApp('music');
+      }
     }
-  }, [currentPath, navigateTo]);
+  }, [currentPath, navigateTo, playFile, onOpenApp]);
 
   // Go back in history
   const goBack = useCallback(() => {
