@@ -11,6 +11,7 @@ import { Messages } from './apps/Messages';
 import { Browser } from './apps/Browser';
 import { Terminal } from './apps/Terminal';
 import { DevCenter } from './apps/DevCenter';
+import { Notepad } from './apps/Notepad';
 import { PlaceholderApp } from './apps/PlaceholderApp';
 import { useAppContext } from './AppContext';
 import { useFileSystem, type FileSystemContextType } from './FileSystemContext';
@@ -204,6 +205,10 @@ export default function OS() {
                 title = 'DEV Center';
                 content = <DevCenter />;
                 break;
+            case 'notepad':
+                title = 'Notepad';
+                content = <Notepad />;
+                break;
             default:
                 title = type.charAt(0).toUpperCase() + type.slice(1);
                 content = <PlaceholderApp title={title} />;
@@ -306,11 +311,16 @@ export default function OS() {
         if (node?.type === 'directory') {
             openWindow('finder', { path });
         } else if (node?.type === 'file') {
-            const lowerName = icon.name.toLowerCase();
-            if (lowerName.endsWith('.mp3') || lowerName.endsWith('.wav') || lowerName.endsWith('.flac')) {
+
+            const isMusic = /\.(mp3|wav|flac|ogg|m4a)$/i.test(icon.name);
+            const isText = /\.(txt|md|json|js|ts|tsx|css|html)$/i.test(icon.name);
+
+            if (isMusic) {
                 playFile(path);
                 // openWindowRef is stable and calls useWindowManager's openWindow which now handles focus
                 openWindowRef.current('music');
+            } else if (isText) {
+                openWindow('notepad', { path });
             }
         }
 

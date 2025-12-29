@@ -198,11 +198,17 @@ export function FileManager({ initialPath, onOpenApp }: { initialPath?: string; 
       const newPath = currentPath === '/' ? `/${item.name}` : `${currentPath}/${item.name}`;
       navigateTo(newPath);
     } else if (item.type === 'file') {
-      const lowerName = item.name.toLowerCase();
-      if (lowerName.endsWith('.mp3') || lowerName.endsWith('.wav') || lowerName.endsWith('.flac')) {
+
+      const isMusic = /\.(mp3|wav|flac|ogg|m4a)$/i.test(item.name);
+      const isText = /\.(txt|md|json|js|ts|tsx|css|html)$/i.test(item.name);
+
+      if (isMusic) {
         const fullPath = currentPath === '/' ? `/${item.name}` : `${currentPath}/${item.name}`;
         playFile(fullPath);
         if (onOpenApp) onOpenApp('music');
+      } else if (isText) {
+        const fullPath = currentPath === '/' ? `/${item.name}` : `${currentPath}/${item.name}`;
+        if (onOpenApp) onOpenApp('notepad', { path: fullPath });
       }
     }
   }, [currentPath, navigateTo, playFile, onOpenApp]);

@@ -1,8 +1,9 @@
-import { memo, useState, useRef } from 'react';
+import { memo, useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { Maximize2 } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import type { WindowState } from '../hooks/useWindowManager';
 import { useAppContext } from './AppContext';
+import { WindowContext } from './WindowContext';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { cn } from './ui/utils';
 
@@ -30,9 +31,35 @@ function WindowComponent({
   const { titleBarBackground } = useThemeColors();
   const { disableShadows, reduceMotion, blurEnabled } = useAppContext();
   const [isDragging, setIsDragging] = useState(false);
+  const [beforeClose, setBeforeClose] = useState<(() => boolean | Promise<boolean>) | null>(null);
 
   // Drag threshold refs
   const dragRef = useRef<{ startX: number; startY: number; timer: NodeJS.Timeout | null }>({ startX: 0, startY: 0, timer: null });
+
+  // Stabilize onClose using ref to prevent context churn if parent passes inline function
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
+  const handleClose = useCallback(async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+
+    // Check local handler
+    if (beforeClose) {
+      const canClose = await beforeClose();
+      if (!canClose) return;
+    }
+    // Call latest prop
+    onCloseRef.current();
+  }, [beforeClose]); // Depend on beforeClose state
+
+  // Context value must be stable to prevent consumer (Notepad) useEffect from looping
+  const windowContextValue = useMemo(() => ({
+    setBeforeClose,
+    forceClose: () => onCloseRef.current(),
+    data: window.data
+  }), [window.data]); // Re-create if data changes
+
+  // ... (rest of the file until return)
 
   // Calculate position/size based on state
   const x = window.isMaximized ? 0 : window.position.x;
@@ -171,7 +198,7 @@ function WindowComponent({
             {/* stopPropagation on controls */}
             <button
               className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
-              onClick={onClose}
+              onClick={handleClose}
             />
             <button
               className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors"
@@ -198,7 +225,9 @@ function WindowComponent({
           className="flex-1 overflow-auto cursor-default"
           style={{ pointerEvents: isDragging ? 'none' : 'auto' }}
         >
-          {window.content}
+          <WindowContext.Provider value={windowContextValue}>
+            {window.content}
+          </WindowContext.Provider>
         </div>
       </div>
     </Rnd >
