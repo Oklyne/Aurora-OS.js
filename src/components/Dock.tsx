@@ -1,4 +1,4 @@
-import { FolderOpen, Settings, Mail, Calendar, Image, Music, Video, Terminal, Globe, MessageSquare, Trash, Trash2 } from 'lucide-react';
+import { FolderOpen, Settings, Mail, Calendar, Image, Music, Video, Terminal, Globe, MessageSquare, Trash, Trash2, FileText } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState, useEffect, useMemo, memo } from 'react';
 import type { WindowState } from '../hooks/useWindowManager';
@@ -16,12 +16,13 @@ interface DockProps {
 
 const dockApps = [
   { id: 'finder', icon: FolderOpen, label: 'Finder', color: 'from-blue-500 to-blue-600', solid: '#3b82f6' },
+  { id: 'notepad', icon: FileText, label: 'Notepad', color: 'from-yellow-400 to-yellow-500', solid: '#eab308' },
   { id: 'mail', icon: Mail, label: 'Mail', color: 'from-blue-400 to-blue-500', solid: '#60a5fa' },
+  { id: 'messages', icon: MessageSquare, label: 'Messages', color: 'from-green-500 to-green-600', solid: '#22c55e' },
   { id: 'calendar', icon: Calendar, label: 'Calendar', color: 'from-red-500 to-red-600', solid: '#ef4444' },
   { id: 'photos', icon: Image, label: 'Photos', color: 'from-pink-500 to-rose-600', solid: '#ec4899' },
   { id: 'music', icon: Music, label: 'Music', color: 'from-purple-500 to-purple-600', solid: '#a855f7' },
   { id: 'videos', icon: Video, label: 'Videos', color: 'from-orange-500 to-orange-600', solid: '#f97316' },
-  { id: 'messages', icon: MessageSquare, label: 'Messages', color: 'from-green-500 to-green-600', solid: '#22c55e' },
   { id: 'browser', icon: Globe, label: 'Browser', color: 'from-cyan-500 to-blue-600', solid: '#06b6d4' },
   { id: 'terminal', icon: Terminal, label: 'Terminal', color: 'from-gray-700 to-gray-900', solid: '#374151' },
   { id: 'settings', icon: Settings, label: 'Settings', color: 'from-gray-500 to-gray-600', solid: '#6b7280' },

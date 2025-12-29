@@ -289,6 +289,9 @@ export function useFileSystemMutations({
         const node = getNodeAtPath(resolved, asUser);
         const actingUser = asUser ? users.find(u => u.username === asUser) || userObj : userObj;
 
+        // FIX: If file doesn't exist, we can't update it -> return false so caller can create it
+        if (!node) return false;
+
         if (node) {
             if (!checkPermissions(node, actingUser, 'write')) return false;
         }
