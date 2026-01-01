@@ -2,13 +2,13 @@
 
 [![Version](https://img.shields.io/badge/Version-v0.7.7-blue)](https://github.com/mental-os/Aurora-OS.js) ![Roadmap Status](<https://img.shields.io/badge/Roadmap-Stage%200%20(OS%20Foundation)-blue>) [![Build](https://github.com/mental-os/Aurora-OS.js/actions/workflows/ci.yml/badge.svg?branch=nightly)](https://github.com/mental-os/Aurora-OS.js/actions/workflows/ci.yml) [![GitHub Pages](https://github.com/mental-os/Aurora-OS.js/actions/workflows/deploy.yml/badge.svg)](https://github.com/mental-os/Aurora-OS.js/actions/workflows/deploy.yml)
 
+![Social media image for Aurora OS.js hacking simulator game project](.github/openGraph.jpg)
+
 A hacking game where the operating system is the game.
 
 Aurora OS.js is an experimental, open‑source OS‑simulation / hacking game framework built entirely with modern web technologies: React, Vite, Tailwind, and Electron.
 
 It’s not a finished game — yet. It’s the foundation: a playable, extensible virtual operating system designed to host hacking mechanics, scripting, multiplayer systems, and emergent gameplay.
-
-Think Hackmud × Grey Hack × else Heart.break(), but re‑imagined through a modern, web‑native OS layer.
 
 ## ✨ What exists right now
 
@@ -71,8 +71,6 @@ This is the ideal phase to influence direction, architecture, and gameplay syste
 - **Icons**: Lucide React
 - **Animation**: Motion (Framer Motion)
 - **Audio**: Howler.js
-- **Charts**: Recharts
-
 - **Testing**: Vitest
 
 ## 🚀 Getting Started
