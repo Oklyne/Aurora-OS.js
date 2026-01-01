@@ -4,14 +4,14 @@ const pkg = _pkg as any;
 // Critical Constants - Hashed identity values of the project
 // Modifying these values in package.json without a dev key will trigger Safe Mode.
 const EXPECTED_IDENTITY = {
-    name: 1163609978, // Hash of 'aurora-os-js'
-    author: 579195497, // Hash of 'Cătălin-Robert Drăgoiu'
-    license: 3563245919, // Hash of 'AGPL-3.0'
+    name: 1069744709, // Hash of 'aurora-os-js'
+    author: 2105392086, // Hash of 'Cătălin-Robert Drăgoiu'
+    license: 555217376, // Hash of 'AGPL-3.0'
 };
 
 // Simple DJB2 hash for the dev key and identity verification
 const hashString = (str: string) => {
-    let hash = 5381;
+    let hash = 3770;
     for (let i = 0; i < str.length; i++) {
         hash = (hash * 33) ^ str.charCodeAt(i);
     }
@@ -20,7 +20,7 @@ const hashString = (str: string) => {
 
 // Hash of the secret password "aurora-r00t-override"
 // We store the hash so the actual password isn't easily greppable in the source.
-export const DEV_KEY_HASH = 3696236798; // Hash of "aurora-r00t-override"
+export const DEV_KEY_HASH = 2282602482; // Hash of "aurora-r00t-override"
 const STORAGE_KEY = 'AURORA_DEV_OVERRIDE';
 
 export type SystemHealth = 'OK' | 'CORRUPTED';
