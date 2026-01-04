@@ -6,7 +6,6 @@ import { useFileSystem } from '../../components/FileSystemContext';
 import { useAppContext } from '../../components/AppContext';
 
 import { STORAGE_KEYS, hardReset } from '../../utils/memory';
-import { updateStoredVersion } from '../../utils/migrations';
 import {Onboarding} from "@/components/Game/Onboarding.tsx";
 
 // The "Actual Game" being played is passed as children (The OS Desktop)
@@ -40,7 +39,6 @@ export function GameRoot({ children }: GameRootProps) {
         // However, we must ensure memory state (like useFileSystem in-memory cache) is also cleared.
         resetFileSystem(); // Keep this for in-game memory sync if needed
 
-        updateStoredVersion(); // Mark session as valid
         setIsLocked(false);
         setGameState('FIRST_BOOT');
     };
@@ -49,6 +47,11 @@ export function GameRoot({ children }: GameRootProps) {
         // Force lock so that even if a user is remembered, we show the Login Screen
         setIsLocked(true);
         setGameState('BOOT');
+    };
+
+    const handleOnboardingComplete = () => {
+        setIsLocked(true);
+        setGameState('GAMEPLAY');
     };
 
     // Override: If user refreshes page during gameplay, should we go back to menu?
@@ -76,7 +79,7 @@ export function GameRoot({ children }: GameRootProps) {
 
         case 'ONBOARDING':
             return <Onboarding
-                onContinue={handleContinue}
+                onContinue={handleOnboardingComplete}
             />
 
         case 'GAMEPLAY':
