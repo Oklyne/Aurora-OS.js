@@ -160,7 +160,10 @@
                   "gatekeeperAssess": false
             },
             "electronLanguages": [
-                  "en"
+                  "en",
+                  "es",
+                  "fr",
+                  "ro"
             ]
       },
       "overrides": {

@@ -1,9 +1,8 @@
 import { AppTemplate } from "./AppTemplate";
 import { Inbox, Trash2, Archive, Star, Search, Reply, Forward, Paperclip, Download, Eye, EyeOff, LogOut } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useAppContext } from "../AppContext";
 import { useSessionStorage } from "@/hooks/useSessionStorage.ts";
-import { useElementSize } from "@/hooks/useElementSize.ts";
 import { cn } from "../ui/utils";
 import { GlassInput } from "../ui/GlassInput";
 import { GlassButton } from "../ui/GlassButton";
@@ -12,6 +11,8 @@ import remarkGfm from "remark-gfm";
 import { useI18n } from "@/i18n";
 import { useFileSystem } from "../FileSystemContext";
 import { notify } from "@/services/notifications";
+import { useThemeColors } from "@/hooks/useThemeColors";
+import { AppMenuConfig } from "@/types.ts";
 
 export interface EmailAttachment {
   id: string;
@@ -27,7 +28,7 @@ export interface Email {
   fromEmail: string;
   subject: string;
   body: string;
-  timestamp: Date;
+  timestamp: Date | string; // Allow string for JSON parsing
   read: boolean;
   starred: boolean;
   archived: boolean;
@@ -35,70 +36,157 @@ export interface Email {
   attachments?: EmailAttachment[];
 }
 
-const mockEmails: Email[] = [];
-
-// Load emails from global mailbox storage
-const loadMailboxEmails = (): Email[] => {
-  const mailboxKey = 'global_mailbox';
-  const mailboxData = localStorage.getItem(mailboxKey);
-  if (mailboxData) {
-    try {
-      const { emails } = JSON.parse(mailboxData);
-      return emails || [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-};
-
 export function Mail({ owner }: { owner?: string }) {
   const { t } = useI18n();
-  const { createFile, resolvePath } = useFileSystem();
-  const { accentColor } = useAppContext();
+  const { createFile, resolvePath, readFile, writeFile, createDirectory, currentUser: globalUser } = useFileSystem();
+  const { activeUser: desktopUser, accentColor } = useAppContext();
+  const { getBackgroundColor, blurStyle } = useThemeColors();
 
-  // Authentication state
-  const [currentUser, setCurrentUser] = useSessionStorage<string | null>(
+  // Determine effective user (support for `sudo mail` or `su user mail`)
+  const activeUser = owner || desktopUser || globalUser || 'guest';
+  const userHome = activeUser === 'root' ? '/root' : `/home/${activeUser}`;
+
+  // File System Paths - File Authority
+  const configDir = `${userHome}/.Config`;
+  const mailConfigPath = `${configDir}/mail.json`;
+  const inboxPath = `${configDir}/inbox.json`;
+
+  // Authentication state (Session)
+  const [sessionUser, setSessionUser] = useSessionStorage<string | null>(
     "mail-current-user",
     null,
-    owner
+    activeUser
   );
+
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [authError, setAuthError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
 
+  // Soft Memory (UI State)
   const [activeMailbox, setActiveMailbox] = useSessionStorage(
     "mail-active-mailbox",
     "inbox",
-    owner
+    activeUser
   );
 
-  const [storedEmails, setStoredEmails] = useSessionStorage<Email[]>(
-    "mail-emails",
-    mockEmails,
-    owner
-  );
+  // Hard Memory (Data)
+  const [storedEmails, setStoredEmails] = useState<Email[]>([]);
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Load emails from mailbox storage when user logs in
+  // --- Auto-Login Logic ---
   useEffect(() => {
-    if (currentUser) {
-      const mailboxEmails = loadMailboxEmails();
-      setStoredEmails(mailboxEmails);
-      // Select the first email if available
-      if (mailboxEmails.length > 0) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setSelectedEmailId(mailboxEmails[0].id);
+    const checkAutoLogin = async () => {
+      // 1. Check for .Config/mail.json (Hacking Gameplay)
+      const mailConfigContent = readFile(mailConfigPath, activeUser);
+      if (mailConfigContent) {
+        try {
+          const config = JSON.parse(mailConfigContent);
+          if (config.email) {
+            setSessionUser(config.email);
+            setAuthLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.error("Failed to parse mail.json", e);
+        }
+      }
+
+      // 2. Fallback: Check if user is already logged in via session
+      if (sessionUser) {
+        setAuthLoading(false);
+        return;
+      }
+
+      setAuthLoading(false);
+    };
+
+    checkAutoLogin();
+  }, [readFile, setSessionUser, mailConfigPath, sessionUser, activeUser]);
+
+
+  // --- Data Loading Logic ---
+  const loadEmails = useCallback(() => {
+    if (!sessionUser) return;
+
+    // 1. Try reading from .Config/inbox.json
+    const inboxContent = readFile(inboxPath, activeUser);
+    if (inboxContent) {
+      try {
+        const data = JSON.parse(inboxContent);
+        if (Array.isArray(data.emails)) {
+          setStoredEmails(data.emails);
+          if (data.emails.length > 0) {
+            setSelectedEmailId(curr => curr || data.emails[0].id);
+          }
+          return;
+        }
+      } catch (e) {
+        console.error("Failed to parse inbox.json", e);
       }
     }
-  }, [currentUser, setStoredEmails]);
 
-  // Responsive container measurement - must be called before early return
-  const [containerRef, { width }] = useElementSize();
-  const showSidebar = width >= 450;
+    // 2. Fallback: Migration from legacy localStorage (global_mailbox)
+    const legacyMailbox = localStorage.getItem("global_mailbox");
+    if (legacyMailbox) {
+      try {
+        const parsed = JSON.parse(legacyMailbox);
+        const emails = parsed.emails;
+        if (Array.isArray(emails) && emails.length > 0) {
+          setStoredEmails(emails);
+          setSelectedEmailId((curr) => curr || emails[0].id);
+
+          // Save to file system immediately
+          createDirectory(userHome, ".Config", activeUser);
+          writeFile(inboxPath, JSON.stringify({ emails }, null, 2), activeUser);
+          return;
+        }
+      } catch (e) {
+        console.error("Failed to migrate legacy mailbox", e);
+      }
+    }
+
+    // 3. Empty state
+    setStoredEmails([]);
+  }, [sessionUser, readFile, inboxPath, userHome, activeUser, createDirectory, writeFile]);
+
+  // Load emails when user changes or mounts
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadEmails();
+  }, [loadEmails]);
+
+  // --- Data Saving Logic ---
+  // Any change to storedEmails should ideally persist to disk.
+  // We use a useEffect with a small debounce or direct write could work.
+  // Given this is a local simulator, direct write on change is fine for now.
+  const persistEmails = useCallback((emailsToSave: Email[]) => {
+    if (!sessionUser) return;
+
+    // Ensure dir exists
+    createDirectory(userHome, '.Config', activeUser);
+
+    const data = {
+      emails: emailsToSave,
+      updatedAt: new Date().toISOString()
+    };
+
+    writeFile(inboxPath, JSON.stringify(data, null, 2), activeUser);
+  }, [sessionUser, userHome, activeUser, createDirectory, writeFile, inboxPath]);
+
+  // Only persist when emails actually change length or content. 
+  // To avoid circular loops, we will wrap state setters instead of a broad useEffect.
+
+  const updateEmails = (newEmails: Email[]) => {
+    setStoredEmails(newEmails);
+    persistEmails(newEmails);
+  };
+
+  // Responsive container measurement handled by AppTemplate
+  // const [containerRef, { width }] = useElementSize();
+  // const showSidebar = width >= 450;
 
   // Handle login - supports both TrustMail and local accounts
   const handleLogin = (e: React.FormEvent) => {
@@ -117,55 +205,50 @@ export function Mail({ owner }: { owner?: string }) {
 
     setAuthLoading(true);
     setTimeout(() => {
-      // Check TrustMail accounts
-      const trustmailAccounts = JSON.parse(
-        localStorage.getItem("trustmail_accounts") || "{}"
-      );
+      // 1. Check Legacy/Web localStorage accounts first (TrustMail)
+      // We still use these because the website writes to them.
+      // But now we ALSO write to FS.
+
+      let foundAccount = null;
+      let provider = '';
+
+      const trustmailAccounts = JSON.parse(localStorage.getItem("trustmail_accounts") || "{}");
+      const mailAccounts = JSON.parse(localStorage.getItem("mail_accounts") || "{}"); // Legacy local
 
       if (trustmailAccounts[loginEmail]) {
-        if (trustmailAccounts[loginEmail].password !== loginPassword) {
-          setAuthLoading(false);
-          setAuthError("Invalid password");
-          return;
-        }
-        setAuthLoading(false);
-        setCurrentUser(loginEmail);
-        setLoginEmail("");
-        setLoginPassword("");
-        return;
+        foundAccount = trustmailAccounts[loginEmail];
+        provider = 'trustmail';
+      } else if (mailAccounts[loginEmail]) {
+        foundAccount = mailAccounts[loginEmail];
+        provider = 'local';
       }
 
-      // Check ProMail accounts
-      const promailAccounts = JSON.parse(
-        localStorage.getItem("promail_accounts") || "{}"
-      );
-
-      if (promailAccounts[loginEmail]) {
-        if (promailAccounts[loginEmail].password !== loginPassword) {
+      if (foundAccount) {
+        if (foundAccount.password !== loginPassword) {
           setAuthLoading(false);
           setAuthError("Invalid password");
           return;
         }
-        setAuthLoading(false);
-        setCurrentUser(loginEmail);
-        setLoginEmail("");
-        setLoginPassword("");
-        return;
-      }
 
-      // Check local mail accounts (legacy)
-      const mailAccounts = JSON.parse(
-        localStorage.getItem("mail_accounts") || "{}"
-      );
+        // Successful Login
+        setSessionUser(loginEmail);
 
-      if (mailAccounts[loginEmail]) {
-        if (mailAccounts[loginEmail].password !== loginPassword) {
-          setAuthLoading(false);
-          setAuthError("Invalid password");
-          return;
+        // SYNC: Update the global website session so TrustMail site knows we are logged in
+        if (provider === 'trustmail') {
+          localStorage.setItem('global_mail_account', loginEmail);
         }
+
+        // Write to FS for auto-login next time (Persistence)
+        createDirectory(userHome, '.Config', activeUser);
+        const mailConfig = {
+          email: loginEmail,
+          password: loginPassword,
+          provider: provider,
+          lastLogin: new Date().toISOString()
+        };
+        writeFile(mailConfigPath, JSON.stringify(mailConfig, null, 2), activeUser);
+
         setAuthLoading(false);
-        setCurrentUser(loginEmail);
         setLoginEmail("");
         setLoginPassword("");
         return;
@@ -178,53 +261,51 @@ export function Mail({ owner }: { owner?: string }) {
 
 
   const handleLogout = () => {
-    setCurrentUser(null);
+    setSessionUser(null);
     setLoginEmail("");
     setLoginPassword("");
     setAuthError("");
+    setStoredEmails([]);
+
+    // SYNC: Clear global website session
+    localStorage.removeItem('global_mail_account');
+
+    // Clear auto-login file
+    writeFile(mailConfigPath, "", activeUser); // Write empty or delete.
   };
 
-  // Ensure timestamps are Date objects (they become strings when stored in localStorage)
+  // Ensure timestamps are Date objects (they become strings when stored in JSON)
   const emails = useMemo(() => {
     return storedEmails.map((email) => ({
       ...email,
-      timestamp:
-        email.timestamp instanceof Date
-          ? email.timestamp
-          : new Date(email.timestamp),
+      timestamp: new Date(email.timestamp),
     }));
   }, [storedEmails]);
-
-  const setEmails = (value: Email[] | ((prev: Email[]) => Email[])) => {
-    if (typeof value === "function") {
-      setStoredEmails((prev) => {
-        const normalizedPrev = prev.map((email) => ({
-          ...email,
-          timestamp:
-            email.timestamp instanceof Date
-              ? email.timestamp
-              : new Date(email.timestamp),
-        }));
-        return value(normalizedPrev);
-      });
-    } else {
-      setStoredEmails(value);
-    }
-  };
 
   // Filter emails based on active mailbox
   const filteredEmails = useMemo(() => {
     let filtered = emails;
 
     // Filter by mailbox
-    if (activeMailbox === "inbox") {
-      filtered = filtered.filter((e) => !e.deleted && !e.archived);
-    } else if (activeMailbox === "starred") {
-      filtered = filtered.filter((e) => e.starred && !e.deleted);
-    } else if (activeMailbox === "archived") {
-      filtered = filtered.filter((e) => e.archived && !e.deleted);
-    } else if (activeMailbox === "trash") {
-      filtered = filtered.filter((e) => e.deleted);
+    switch (activeMailbox) {
+      case "inbox":
+        filtered = filtered.filter((e) => !e.deleted && !e.archived);
+        break;
+      case "sent":
+        // In a real app we'd have 'sent' property or 'from' check. 
+        // For now, let's assume all stored emails are 'inbox' unless flagged otherwise, 
+        // or we filter by 'from === sessionUser' (if we implemented sending)
+        filtered = filtered.filter((e) => e.fromEmail === sessionUser && !e.deleted);
+        break;
+      case "starred":
+        filtered = filtered.filter((e) => e.starred && !e.deleted);
+        break;
+      case "archived":
+        filtered = filtered.filter((e) => e.archived && !e.deleted);
+        break;
+      case "trash":
+        filtered = filtered.filter((e) => e.deleted);
+        break;
     }
 
     // Filter by search query
@@ -242,24 +323,124 @@ export function Mail({ owner }: { owner?: string }) {
     return filtered.sort(
       (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
     );
-  }, [emails, activeMailbox, searchQuery]);
+  }, [emails, activeMailbox, searchQuery, sessionUser]);
 
   const selectedEmail = selectedEmailId
     ? filteredEmails.find((e) => e.id === selectedEmailId)
     : null;
 
+  // Actions
+  const handleSelectEmail = (emailId: string) => {
+    setSelectedEmailId(emailId);
+    // Mark as read
+    const email = storedEmails.find(e => e.id === emailId);
+    if (email && !email.read) {
+      const newEmails = storedEmails.map(e => e.id === emailId ? { ...e, read: true } : e);
+      updateEmails(newEmails);
+    }
+  };
+
+  const handleToggleStar = (emailId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newEmails = storedEmails.map(email =>
+      email.id === emailId ? { ...email, starred: !email.starred } : email
+    );
+    updateEmails(newEmails);
+  };
+
+  const handleDelete = () => {
+    if (!selectedEmailId) return;
+    const newEmails = storedEmails.map(e =>
+      e.id === selectedEmailId ? { ...e, deleted: true } : e
+    );
+    updateEmails(newEmails);
+
+    // Select next available
+    const remaining = newEmails.filter(e => !e.deleted && !e.archived); // approximate next selection
+    if (remaining.length > 0) {
+      setSelectedEmailId(remaining[0].id);
+    } else {
+      setSelectedEmailId(null);
+    }
+  };
+
+  const handleArchive = () => {
+    if (!selectedEmailId) return;
+    const newEmails = storedEmails.map(e =>
+      e.id === selectedEmailId ? { ...e, archived: !e.archived } : e
+    );
+    updateEmails(newEmails);
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const formatTime = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return t("mail.time.minutesAgo", { minutes: diffMins });
+    if (diffHours < 24) return t("mail.time.hoursAgo", { hours: diffHours });
+    if (diffDays === 0) return t("mail.time.today");
+    if (diffDays === 1) return t("mail.time.yesterday");
+    if (diffDays < 7) return t("mail.time.daysAgo", { days: diffDays });
+    return date.toLocaleDateString();
+  };
+
+  const handleDownloadAttachment = (attachment: EmailAttachment) => {
+    const downloadsPath = resolvePath('~/Downloads', activeUser);
+    const success = createFile(
+      downloadsPath,
+      attachment.name,
+      attachment.content,
+      activeUser
+    );
+
+    if (success) {
+      notify.system(
+        "success",
+        t("mail.attachments.downloaded"),
+        t("mail.attachments.downloadedTo", {
+          name: attachment.name,
+          folder: "Downloads",
+        })
+      );
+    } else {
+      notify.system(
+        "error",
+        t("mail.attachments.downloadFailed"),
+        t("mail.attachments.downloadFailedMessage", { name: attachment.name })
+      );
+    }
+  };
+
   // Show login page if not authenticated
-  if (!currentUser) {
+  if (!sessionUser) {
     return (
       <AppTemplate
         content={
-          <div className="min-h-full bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 flex items-center justify-center p-4">
-            <div className="w-full max-w-sm">
-              <div className="bg-gray-900/60 backdrop-blur-xl border border-gray-700 rounded-xl p-6 shadow-2xl">
+          <div className="min-h-full flex items-center justify-center p-4">
+            <div className="w-full max-w-sm relative z-10">
+              <div
+                className={cn(
+                  "border border-white/10 rounded-xl p-6 shadow-2xl transition-all duration-300",
+                )}
+                style={{
+                  background: getBackgroundColor(0.8),
+                  ...blurStyle,
+                  boxShadow: `0 25px 50px -12px rgba(0, 0, 0, 0.5)`
+                }}
+              >
                 {/* Header */}
                 <div className="text-center mb-6">
-                  <h1 className="text-lg font-bold text-white">Mail</h1>
-                  <p className="text-xs text-gray-400">Sign in to your account</p>
+                  <h1 className="text-lg font-bold text-white">{t('mail.login.title')}</h1>
+                  <p className="text-xs text-gray-400">{t('mail.login.subtitle')}</p>
                 </div>
 
                 {authError && (
@@ -271,30 +452,30 @@ export function Mail({ owner }: { owner?: string }) {
                 {/* Login Form */}
                 <form onSubmit={handleLogin} className="space-y-3">
                   <div>
-                    <input
+                    <GlassInput
                       type="email"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="Email"
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      placeholder={t('mail.login.emailPlaceholder')}
                       required
+                      className="w-full"
                     />
                   </div>
 
                   <div>
                     <div className="relative">
-                      <input
+                      <GlassInput
                         type={showPassword ? "text" : "password"}
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
-                        placeholder="Password"
-                        className="w-full px-3 py-2 pr-9 bg-gray-800 border border-gray-700 rounded text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder={t('mail.login.passwordPlaceholder')}
                         required
+                        className="w-full pr-9"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
                       >
                         {showPassword ? (
                           <EyeOff className="w-4 h-4" />
@@ -305,19 +486,19 @@ export function Mail({ owner }: { owner?: string }) {
                     </div>
                   </div>
 
-                  <button
+                  <GlassButton
                     type="submit"
                     disabled={authLoading}
-                    className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full justify-center font-medium transition-all hover:brightness-110"
+                    style={{ backgroundColor: accentColor }}
                   >
-                    {authLoading ? "Signing in..." : "Sign In"}
-                  </button>
+                    {authLoading ? t('mail.login.signingIn') : t('mail.login.signIn')}
+                  </GlassButton>
                 </form>
 
                 {/* Info */}
                 <div className="mt-4 pt-4 border-t border-gray-700 text-center">
-                  <p className="text-xs text-gray-400">Create an account via an email provider</p>
-
+                  <p className="text-xs text-gray-400">{t('mail.login.createAccountInfo')}</p>
                 </div>
               </div>
             </div>
@@ -357,92 +538,12 @@ export function Mail({ owner }: { owner?: string }) {
       items: section.items.map((item) =>
         item.id === "inbox"
           ? {
-              ...item,
-              badge: unreadCount > 0 ? unreadCount.toString() : undefined,
-            }
+            ...item,
+            badge: unreadCount > 0 ? unreadCount.toString() : undefined,
+          }
           : item
       ),
     })),
-  };
-
-  const handleSelectEmail = (emailId: string) => {
-    setSelectedEmailId(emailId);
-    setEmails((prev) =>
-      prev.map((e) => (e.id === emailId && !e.read ? { ...e, read: true } : e))
-    );
-  };
-
-  const handleToggleStar = (emailId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEmails((prev) =>
-      prev.map((email) =>
-        email.id === emailId ? { ...email, starred: !email.starred } : email
-      )
-    );
-  };
-
-  const handleDelete = () => {
-    if (!selectedEmailId) return;
-    setEmails((prev) =>
-      prev.map((e) => (e.id === selectedEmailId ? { ...e, deleted: true } : e))
-    );
-    setSelectedEmailId(filteredEmails[0]?.id || null);
-  };
-
-  const handleArchive = () => {
-    if (!selectedEmailId) return;
-    setEmails((prev) =>
-      prev.map((e) =>
-        e.id === selectedEmailId ? { ...e, archived: !e.archived } : e
-      )
-    );
-  };
-
-  const formatTime = (date: Date) => {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) return t("mail.time.minutesAgo", { minutes: diffMins });
-    if (diffHours < 24) return t("mail.time.hoursAgo", { hours: diffHours });
-    if (diffDays === 0) return t("mail.time.today");
-    if (diffDays === 1) return t("mail.time.yesterday");
-    if (diffDays < 7) return t("mail.time.daysAgo", { days: diffDays });
-    return date.toLocaleDateString();
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const handleDownloadAttachment = (attachment: EmailAttachment) => {
-    const downloadsPath = resolvePath('~/Downloads', owner);
-    const success = createFile(
-      downloadsPath,
-      attachment.name,
-      attachment.content
-    );
-
-    if (success) {
-      notify.system(
-        "success",
-        t("mail.attachments.downloaded"),
-        t("mail.attachments.downloadedTo", {
-          name: attachment.name,
-          folder: "Downloads",
-        })
-      );
-    } else {
-      notify.system(
-        "error",
-        t("mail.attachments.downloadFailed"),
-        t("mail.attachments.downloadFailedMessage", { name: attachment.name })
-      );
-    }
   };
 
   const content = ({ contentWidth }: { contentWidth: number }) => {
@@ -485,9 +586,16 @@ export function Mail({ owner }: { owner?: string }) {
               </div>
             ) : (
               filteredEmails.map((email) => (
-                <button
+                <div
                   key={email.id}
                   onClick={() => handleSelectEmail(email.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      handleSelectEmail(email.id);
+                    }
+                  }}
                   className={cn(
                     "w-full flex items-start gap-2 p-3 rounded-lg transition-colors text-left",
                     selectedEmailId === email.id
@@ -499,7 +607,10 @@ export function Mail({ owner }: { owner?: string }) {
                 >
                   <div className="relative mt-1 shrink-0">
                     <button
-                      onClick={(e) => handleToggleStar(email.id, e)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleStar(email.id, e);
+                      }}
                       className="transition-transform active:scale-95"
                     >
                       <Star
@@ -556,7 +667,7 @@ export function Mail({ owner }: { owner?: string }) {
                       </div>
                     </div>
                   )}
-                </button>
+                </div>
               ))
             )}
           </div>
@@ -686,11 +797,11 @@ export function Mail({ owner }: { owner?: string }) {
                         <span className="text-sm font-medium">
                           {selectedEmail.attachments.length === 1
                             ? t("mail.attachments.count", {
-                                count: selectedEmail.attachments.length,
-                              })
+                              count: selectedEmail.attachments.length,
+                            })
                             : t("mail.attachments.count_plural", {
-                                count: selectedEmail.attachments.length,
-                              })}
+                              count: selectedEmail.attachments.length,
+                            })}
                         </span>
                       </div>
                       <div className="grid grid-cols-1 gap-2">
@@ -731,45 +842,45 @@ export function Mail({ owner }: { owner?: string }) {
     );
   };
 
-  return (
-    <div className="h-full w-full flex flex-col">
-      {/* User Header */}
-      <div className="bg-white/5 backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs font-semibold">
-              {currentUser?.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-white">{currentUser}</p>
-          </div>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors text-sm font-medium"
+  const toolbar = (
+    <div className="flex items-center justify-between w-full">
+      <div className="flex items-center gap-3">
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+          style={{
+            background: `linear-gradient(to bottom right, ${accentColor}, ${accentColor}80)`
+          }}
         >
-          <LogOut className="w-4 h-4" />
-          Sign Out
-        </button>
+          <span className="text-white text-xs font-semibold">
+            {sessionUser?.charAt(0).toUpperCase()}
+          </span>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-white">{sessionUser}</p>
+        </div>
       </div>
-
-      {/* Email Client */}
-      <div ref={containerRef} className="flex-1 min-h-0">
-        <AppTemplate
-          sidebar={updatedSidebar}
-          content={content}
-          hasSidebar={showSidebar}
-          activeItem={activeMailbox}
-          onItemClick={(id) => setActiveMailbox(id)}
-          minContentWidth={0}
-        />
-      </div>
+      <button
+        onClick={handleLogout}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-white text-sm transition-all hover:opacity-90 shrink-0"
+        style={{ backgroundColor: accentColor }}
+      >
+        <LogOut className="w-4 h-4" />
+        {t('mail.login.signOut')}
+      </button>
     </div>
   );
-}
 
-import { AppMenuConfig } from "@/types.ts";
+  return (
+    <AppTemplate
+      sidebar={updatedSidebar}
+      toolbar={toolbar}
+      content={content}
+      activeItem={activeMailbox}
+      onItemClick={(id) => setActiveMailbox(id)}
+      minContentWidth={450}
+    />
+  );
+}
 
 export const mailMenuConfig: AppMenuConfig = {
   menus: ["File", "Edit", "View", "Mailbox", "Message", "Window", "Help"],
@@ -791,27 +902,27 @@ export const mailMenuConfig: AppMenuConfig = {
       {
         label: "New Message",
         labelKey: "mail.menu.newMessage",
-        shortcut: "⌘N",
         action: "new-message",
+        shortcut: "Ctrl+N",
       },
       { type: "separator" },
       {
         label: "Reply",
         labelKey: "mail.menu.reply",
-        shortcut: "⌘R",
         action: "reply",
+        shortcut: "Ctrl+R",
       },
       {
         label: "Reply All",
         labelKey: "mail.menu.replyAll",
-        shortcut: "⇧⌘R",
         action: "reply-all",
+        shortcut: "Ctrl+Shift+R",
       },
       {
         label: "Forward",
         labelKey: "mail.menu.forward",
-        shortcut: "⇧⌘F",
         action: "forward",
+        shortcut: "Ctrl+F",
       },
     ],
   },

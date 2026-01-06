@@ -4,8 +4,8 @@ import { AppTemplate } from './AppTemplate';
 import { useAppStorage } from '../../hooks/useAppStorage';
 import { cn } from '../ui/utils';
 import { useI18n } from '../../i18n/index';
-import { getWebsiteByDomain } from '../../websites/registry';
-import type { HistoryEntry } from '../../websites/types';
+import { getWebsiteByDomain } from '../websites/registry';
+import type { HistoryEntry } from '../websites/types';
 
 export function Browser({ owner }: { owner?: string }) {
   const { t } = useI18n();
@@ -190,7 +190,7 @@ export function Browser({ owner }: { owner?: string }) {
               type="text"
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="Search or enter address..."
+              placeholder={t('browser.searchPlaceholder')}
               className="flex-1 bg-transparent text-white text-sm focus:outline-none placeholder-white/30"
             />
             <Star className="w-3.5 h-3.5 text-white/50 hover:text-white/80 cursor-pointer transition-colors" />
@@ -205,20 +205,21 @@ export function Browser({ owner }: { owner?: string }) {
             domain={currentWebsite.domain}
             onNavigate={navigate}
             params={params}
+            owner={owner}
           />
         ) : (
           <div className="min-h-full flex items-center justify-center bg-gray-900 text-white p-8">
             <div className="text-center max-w-md">
               <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-              <h1 className="text-2xl font-bold mb-2">Page Not Found</h1>
+              <h1 className="text-2xl font-bold mb-2">{t('browser.error.pageNotFound')}</h1>
               <p className="text-white/60 mb-6">
-                The website <span className="text-white font-mono">{currentUrl}</span> could not be found.
+                {t('browser.error.pageNotFoundDesc', { url: currentUrl })}
               </p>
               <button
                 onClick={goHome}
                 className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
               >
-                Go to Home
+                {t('browser.error.goHome')}
               </button>
             </div>
           </div>

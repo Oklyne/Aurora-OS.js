@@ -25,6 +25,11 @@ export const STORAGE_KEYS = {
     USERS: 'aurora-users',
     VERSION: 'aurora-version',
     INSTALLED_APPS: 'aurora-installed-apps', // App Store installed apps
+
+    // Website specific memory
+    TRUSTMAIL_ACCOUNTS: 'trustmail_accounts', // Database of created accounts
+    TRUSTMAIL_CURRENT: 'global_mail_account', // Currently logged in user for the website
+    GLOBAL_MAILBOX: 'global_mailbox', // Legacy mailbox backup
 } as const;
 
 const MEMORY_CONFIG = {
@@ -33,7 +38,8 @@ const MEMORY_CONFIG = {
             STORAGE_KEYS.DESKTOP_ICONS,
             STORAGE_KEYS.SOUND,
             STORAGE_KEYS.SYSTEM_CONFIG,
-            STORAGE_KEYS.LANGUAGE
+            STORAGE_KEYS.LANGUAGE,
+            STORAGE_KEYS.TRUSTMAIL_CURRENT // Website login is "soft"
         ] as string[],
         prefixes: [
             STORAGE_KEYS.SETTINGS,
@@ -49,7 +55,9 @@ const MEMORY_CONFIG = {
             STORAGE_KEYS.FILESYSTEM,
             STORAGE_KEYS.USERS,
             STORAGE_KEYS.VERSION,
-            STORAGE_KEYS.INSTALLED_APPS
+            STORAGE_KEYS.INSTALLED_APPS,
+            STORAGE_KEYS.TRUSTMAIL_ACCOUNTS, // Account DB is "hard"
+            STORAGE_KEYS.GLOBAL_MAILBOX // Legacy data is "hard"
         ] as string[],
         prefixes: [] // Future proofing
     }

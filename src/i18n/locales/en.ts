@@ -281,6 +281,12 @@ export const en: TranslationDict = {
     },
     recentActivity: 'Recent Activity',
     exampleWebsite: 'Example Website {{index}}',
+    searchPlaceholder: 'Search or enter address...',
+    error: {
+      pageNotFound: 'Page Not Found',
+      pageNotFoundDesc: 'The website {{url}} could not be found.',
+      goHome: 'Go to Home',
+    },
   },
   music: {
     sidebar: {
@@ -363,6 +369,9 @@ export const en: TranslationDict = {
       },
       who: {
         description: 'Show who is logged on',
+      },
+      clear: {
+        description: 'Clear the terminal screen',
       },
       cat: {
         description: 'Display file contents',
@@ -557,6 +566,16 @@ export const en: TranslationDict = {
     },
   },
   mail: {
+    login: {
+      title: 'Mail',
+      subtitle: 'Sign in to your account',
+      emailPlaceholder: 'Email',
+      passwordPlaceholder: 'Password',
+      signingIn: 'Signing in...',
+      signIn: 'Sign In',
+      signOut: 'Sign Out',
+      createAccountInfo: 'Create an account via an email provider',
+    },
     menu: {
       newMailbox: 'New Mailbox',
       onlineStatus: 'Online Status',

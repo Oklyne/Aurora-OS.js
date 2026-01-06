@@ -90,6 +90,7 @@ Or use the [GitHub Pages](https://mental-os.github.io/Aurora-OS.js) (LIVE DEMO)
 ### Added
 
 - **Mail App**: Added mail app with basic functionality, to be further enhanced by gameplay logic and features in 0.9.x (just like Messages app should be enhanced by gameplay logic and features in 0.9.x).
+- **Browser App**: Vanilla core-websites that can be opened from the browser app. For now only TrustMail produces a result (eg. interoperability with Mail and filsystem).
 - **Translation**: RO (Romanian) standard language added.
 
 ### Improved

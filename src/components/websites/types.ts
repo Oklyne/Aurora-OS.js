@@ -40,6 +40,7 @@ export interface WebsiteProps {
   domain: string;
   onNavigate?: (url: string) => void;
   params?: Record<string, string>;
+  owner?: string;
 }
 
 /**

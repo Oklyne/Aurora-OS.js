@@ -1,4 +1,4 @@
-import {WebsiteContainer, WebsiteLayout, WebsiteProps} from "@/websites";
+import { WebsiteContainer, WebsiteLayout, WebsiteProps } from "@/components/websites";
 
 export function HackWithJack(_props: WebsiteProps) {
     return (
@@ -14,6 +14,6 @@ export function HackWithJack(_props: WebsiteProps) {
                     </div>
                 </div>
             </WebsiteContainer>
-            </WebsiteLayout>
+        </WebsiteLayout>
     )
 }

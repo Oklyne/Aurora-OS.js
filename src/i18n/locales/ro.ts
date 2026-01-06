@@ -324,6 +324,12 @@ export const ro: TranslationDict = {
         },
         recentActivity: 'Activitate Recentă',
         exampleWebsite: 'Site Exemplu {{index}}',
+        searchPlaceholder: 'Caută sau introdu o adresă...',
+        error: {
+            pageNotFound: 'Pagina nu a fost găsită',
+            pageNotFoundDesc: 'Site-ul web {{url}} nu a putut fi găsit.',
+            goHome: 'Mergi la pagina principală',
+        },
     },
     music: {
         sidebar: {
@@ -603,6 +609,16 @@ export const ro: TranslationDict = {
         },
     },
     mail: {
+        login: {
+            title: 'Mail',
+            subtitle: 'Conectează-te la contul tău',
+            emailPlaceholder: 'Email',
+            passwordPlaceholder: 'Parolă',
+            signingIn: 'Se conectează...',
+            signIn: 'Conectare',
+            signOut: 'Deconectare',
+            createAccountInfo: 'Creează un cont printr-un furnizor de e-mail',
+        },
         menu: {
             newMailbox: 'Cutie Poștală Nouă',
             onlineStatus: 'Status Online',
@@ -610,6 +626,45 @@ export const ro: TranslationDict = {
             reply: 'Răspunde',
             replyAll: 'Răspunde Tuturor',
             forward: 'Redirecționează',
+        },
+        sidebar: {
+            mailboxes: 'Cutii Poștale',
+            inbox: 'Inbox',
+            starred: 'Marcate cu stea',
+            archived: 'Arhivate',
+            trash: 'Coș de gunoi',
+        },
+        search: {
+            placeholder: 'Caută e-mailuri...',
+        },
+        empty: {
+            noEmails: 'Niciun e-mail',
+            noEmailsFound: 'Niciun e-mail găsit',
+            selectEmail: 'Selectează un e-mail pentru a-l citi',
+        },
+        actions: {
+            reply: 'Răspunde',
+            forward: 'Redirecționează',
+            archive: 'Arhivează',
+            unarchive: 'Dezarhivează',
+            delete: 'Șterge',
+        },
+        time: {
+            minutesAgo: 'acum {{minutes}}m',
+            hoursAgo: 'acum {{hours}}h',
+            today: 'Astăzi',
+            yesterday: 'Ieri',
+            daysAgo: 'acum {{days}} zile',
+        },
+        attachments: {
+            title: 'Atașamente',
+            count: '{{count}} atașament',
+            count_plural: '{{count}} atașamente',
+            download: 'Descarcă',
+            downloaded: 'Descărcat',
+            downloadedTo: '{{name}} descărcat în {{folder}}',
+            downloadFailed: 'Descărcare eșuată',
+            downloadFailedMessage: 'Nu s-a putut descărca {{name}}',
         },
     },
     notepad: {

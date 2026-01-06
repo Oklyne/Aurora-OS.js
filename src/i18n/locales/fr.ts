@@ -14,7 +14,6 @@ export const fr: TranslationDict = {
         label: 'Nouvelle boucle',
         desc: 'Repartir à zéro (efface les données)',
       },
-      mail: 'Courrier',
       settings: {
         label: 'BIOS',
         desc: 'Configurer les paramètres globaux',
@@ -82,6 +81,7 @@ export const fr: TranslationDict = {
     notepad: 'Notes',
     calendar: 'Calendrier',
     appStore: 'App Store',
+    mail: 'Courrier',
   },
   a11y: {
     common: {
@@ -327,6 +327,12 @@ export const fr: TranslationDict = {
     },
     recentActivity: 'Activité récente',
     exampleWebsite: 'Site exemple {{index}}',
+    searchPlaceholder: 'Rechercher ou saisir une adresse...',
+    error: {
+      pageNotFound: 'Page non trouvée',
+      pageNotFoundDesc: "Le site web {{url}} n'a pas pu être trouvé.",
+      goHome: "Aller à l'accueil",
+    },
   },
   music: {
     sidebar: {
@@ -606,6 +612,16 @@ export const fr: TranslationDict = {
     },
   },
   mail: {
+    login: {
+      title: 'Courrier',
+      subtitle: 'Connectez-vous à votre compte',
+      emailPlaceholder: 'E-mail',
+      passwordPlaceholder: 'Mot de passe',
+      signingIn: 'Connexion en cours...',
+      signIn: 'Se connecter',
+      signOut: 'Se déconnecter',
+      createAccountInfo: 'Créer un compte via un fournisseur de messagerie',
+    },
     menu: {
       newMailbox: 'Nouvelle boîte aux lettres',
       onlineStatus: 'Statut en ligne',
