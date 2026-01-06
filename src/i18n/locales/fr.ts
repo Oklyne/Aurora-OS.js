@@ -14,7 +14,6 @@ export const fr: TranslationDict = {
         label: 'Nouvelle boucle',
         desc: 'Repartir à zéro (efface les données)',
       },
-    mail: 'Courrier',
       settings: {
         label: 'BIOS',
         desc: 'Configurer les paramètres globaux',
@@ -22,6 +21,12 @@ export const fr: TranslationDict = {
       exit: {
         label: 'Éteindre',
         desc: 'Terminer la session',
+        confirm: {
+          title: 'Arrêt du Système',
+          message: 'Êtes-vous sûr de vouloir éteindre le système ? Les progrès non sauvegardés peuvent être perdus.',
+          cancel: 'Annuler',
+          confirm: 'Éteindre',
+        },
       },
     },
     bios: {
@@ -76,6 +81,7 @@ export const fr: TranslationDict = {
     notepad: 'Notes',
     calendar: 'Calendrier',
     appStore: 'App Store',
+    mail: 'Courrier',
   },
   a11y: {
     common: {
@@ -321,6 +327,12 @@ export const fr: TranslationDict = {
     },
     recentActivity: 'Activité récente',
     exampleWebsite: 'Site exemple {{index}}',
+    searchPlaceholder: 'Rechercher ou saisir une adresse...',
+    error: {
+      pageNotFound: 'Page non trouvée',
+      pageNotFoundDesc: "Le site web {{url}} n'a pas pu être trouvé.",
+      goHome: "Aller à l'accueil",
+    },
   },
   music: {
     sidebar: {
@@ -600,6 +612,16 @@ export const fr: TranslationDict = {
     },
   },
   mail: {
+    login: {
+      title: 'Courrier',
+      subtitle: 'Connectez-vous à votre compte',
+      emailPlaceholder: 'E-mail',
+      passwordPlaceholder: 'Mot de passe',
+      signingIn: 'Connexion en cours...',
+      signIn: 'Se connecter',
+      signOut: 'Se déconnecter',
+      createAccountInfo: 'Créer un compte via un fournisseur de messagerie',
+    },
     menu: {
       newMailbox: 'Nouvelle boîte aux lettres',
       onlineStatus: 'Statut en ligne',
@@ -607,6 +629,45 @@ export const fr: TranslationDict = {
       reply: 'Répondre',
       replyAll: 'Répondre à tous',
       forward: 'Transférer',
+    },
+    sidebar: {
+      mailboxes: 'Boîtes aux lettres',
+      inbox: 'Boîte de réception',
+      starred: 'Suivis',
+      archived: 'Archivés',
+      trash: 'Corbeille',
+    },
+    search: {
+      placeholder: 'Rechercher des courriels...',
+    },
+    empty: {
+      noEmails: 'Aucun courriel',
+      noEmailsFound: 'Aucun courriel trouvé',
+      selectEmail: 'Sélectionnez un courriel à lire',
+    },
+    actions: {
+      reply: 'Répondre',
+      forward: 'Transférer',
+      archive: 'Archiver',
+      unarchive: 'Désarchiver',
+      delete: 'Supprimer',
+    },
+    time: {
+      minutesAgo: 'il y a {{minutes}} min',
+      hoursAgo: 'il y a {{hours}} h',
+      today: "Aujourd'hui",
+      yesterday: 'Hier',
+      daysAgo: 'il y a {{days}} j',
+    },
+    attachments: {
+      title: 'Pièces jointes',
+      count: '{{count}} pièce jointe',
+      count_plural: '{{count}} pièces jointes',
+      download: 'Télécharger',
+      downloaded: 'Téléchargé',
+      downloadedTo: '{{name}} téléchargé dans {{folder}}',
+      downloadFailed: 'Échec du téléchargement',
+      downloadFailedMessage: 'Échec du téléchargement de {{name}}',
     },
   },
   notepad: {

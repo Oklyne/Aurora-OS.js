@@ -21,6 +21,12 @@ export const en: TranslationDict = {
       exit: {
         label: 'Shutdown',
         desc: 'Terminate session',
+        confirm: {
+          title: 'System Shutdown',
+          message: 'Are you sure you want to shut down the system? Unsaved progress may be lost.',
+          cancel: 'Cancel',
+          confirm: 'Shutdown',
+        },
       },
     },
     bios: {
@@ -275,6 +281,12 @@ export const en: TranslationDict = {
     },
     recentActivity: 'Recent Activity',
     exampleWebsite: 'Example Website {{index}}',
+    searchPlaceholder: 'Search or enter address...',
+    error: {
+      pageNotFound: 'Page Not Found',
+      pageNotFoundDesc: 'The website {{url}} could not be found.',
+      goHome: 'Go to Home',
+    },
   },
   music: {
     sidebar: {
@@ -357,6 +369,9 @@ export const en: TranslationDict = {
       },
       who: {
         description: 'Show who is logged on',
+      },
+      clear: {
+        description: 'Clear the terminal screen',
       },
       cat: {
         description: 'Display file contents',
@@ -551,6 +566,16 @@ export const en: TranslationDict = {
     },
   },
   mail: {
+    login: {
+      title: 'Mail',
+      subtitle: 'Sign in to your account',
+      emailPlaceholder: 'Email',
+      passwordPlaceholder: 'Password',
+      signingIn: 'Signing in...',
+      signIn: 'Sign In',
+      signOut: 'Sign Out',
+      createAccountInfo: 'Create an account via an email provider',
+    },
     menu: {
       newMailbox: 'New Mailbox',
       onlineStatus: 'Online Status',
@@ -558,6 +583,45 @@ export const en: TranslationDict = {
       reply: 'Reply',
       replyAll: 'Reply All',
       forward: 'Forward',
+    },
+    sidebar: {
+      mailboxes: 'Mailboxes',
+      inbox: 'Inbox',
+      starred: 'Starred',
+      archived: 'Archived',
+      trash: 'Trash',
+    },
+    search: {
+      placeholder: 'Search emails...',
+    },
+    empty: {
+      noEmails: 'No emails',
+      noEmailsFound: 'No emails found',
+      selectEmail: 'Select an email to read',
+    },
+    actions: {
+      reply: 'Reply',
+      forward: 'Forward',
+      archive: 'Archive',
+      unarchive: 'Unarchive',
+      delete: 'Delete',
+    },
+    time: {
+      minutesAgo: '{{minutes}}m ago',
+      hoursAgo: '{{hours}}h ago',
+      today: 'Today',
+      yesterday: 'Yesterday',
+      daysAgo: '{{days}}d ago',
+    },
+    attachments: {
+      title: 'Attachments',
+      count: '{{count}} attachment',
+      count_plural: '{{count}} attachments',
+      download: 'Download',
+      downloaded: 'Downloaded',
+      downloadedTo: '{{name}} downloaded to {{folder}}',
+      downloadFailed: 'Download failed',
+      downloadFailedMessage: 'Failed to download {{name}}',
     },
   },
   notepad: {

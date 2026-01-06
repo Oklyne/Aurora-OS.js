@@ -14,7 +14,6 @@ export const es: TranslationDict = {
         label: 'Nuevo bucle',
         desc: 'Empezar de cero (borra los datos)',
       },
-    mail: 'Correo',
       settings: {
         label: 'BIOS',
         desc: 'Configurar parámetros globales',
@@ -22,6 +21,12 @@ export const es: TranslationDict = {
       exit: {
         label: 'Apagar',
         desc: 'Terminar sesión',
+        confirm: {
+          title: 'Apagado del Sistema',
+          message: '¿Estás seguro de que quieres apagar el sistema? El progreso no guardado puede perderse.',
+          cancel: 'Cancelar',
+          confirm: 'Apagar',
+        },
       },
     },
     bios: {
@@ -75,6 +80,7 @@ export const es: TranslationDict = {
     notepad: 'Bloc de notas',
     calendar: 'Calendario',
     appStore: 'App Store',
+    mail: 'Correo',
   },
   a11y: {
     common: {
@@ -319,6 +325,12 @@ export const es: TranslationDict = {
     },
     recentActivity: 'Actividad reciente',
     exampleWebsite: 'Sitio de ejemplo {{index}}',
+    searchPlaceholder: 'Busca o introduce una dirección...',
+    error: {
+      pageNotFound: 'Página no encontrada',
+      pageNotFoundDesc: 'No se ha podido encontrar el sitio web {{url}}.',
+      goHome: 'Ir al inicio',
+    },
   },
   music: {
     sidebar: {
@@ -598,6 +610,16 @@ export const es: TranslationDict = {
     },
   },
   mail: {
+    login: {
+      title: 'Correo',
+      subtitle: 'Inicia sesión en tu cuenta',
+      emailPlaceholder: 'Correo electrónico',
+      passwordPlaceholder: 'Contraseña',
+      signingIn: 'Iniciando sesión...',
+      signIn: 'Iniciar sesión',
+      signOut: 'Cerrar sesión',
+      createAccountInfo: 'Crea una cuenta a través de un proveedor de correo electrónico',
+    },
     menu: {
       newMailbox: 'Nuevo buzón',
       onlineStatus: 'Estado en línea',
@@ -605,6 +627,45 @@ export const es: TranslationDict = {
       reply: 'Responder',
       replyAll: 'Responder a todos',
       forward: 'Reenviar',
+    },
+    sidebar: {
+      mailboxes: 'Buzones',
+      inbox: 'Bandeja de entrada',
+      starred: 'Destacados',
+      archived: 'Archivados',
+      trash: 'Papelera',
+    },
+    search: {
+      placeholder: 'Buscar correos...',
+    },
+    empty: {
+      noEmails: 'No hay correos',
+      noEmailsFound: 'No se encontraron correos',
+      selectEmail: 'Selecciona un correo para leer',
+    },
+    actions: {
+      reply: 'Responder',
+      forward: 'Reenviar',
+      archive: 'Archivar',
+      unarchive: 'Desarchivar',
+      delete: 'Eliminar',
+    },
+    time: {
+      minutesAgo: 'hace {{minutes}} min',
+      hoursAgo: 'hace {{hours}} h',
+      today: 'Hoy',
+      yesterday: 'Ayer',
+      daysAgo: 'hace {{days}} d',
+    },
+    attachments: {
+      title: 'Archivos adjuntos',
+      count: '{{count}} archivo adjunto',
+      count_plural: '{{count}} archivos adjuntos',
+      download: 'Descargar',
+      downloaded: 'Descargado',
+      downloadedTo: '{{name}} descargado en {{folder}}',
+      downloadFailed: 'Error al descargar',
+      downloadFailedMessage: 'No se pudo descargar {{name}}',
     },
   },
   notepad: {

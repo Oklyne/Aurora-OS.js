@@ -1,18 +1,11 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight, RotateCw, Home, Star, Lock, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, RotateCw, Home, Star, Lock, AlertTriangle, X } from 'lucide-react';
 import { AppTemplate } from './AppTemplate';
 import { useAppStorage } from '../../hooks/useAppStorage';
 import { cn } from '../ui/utils';
 import { useI18n } from '../../i18n/index';
-
-const quickLinks = [
-  { id: 1, name: 'GitHub', color: 'bg-gray-900' },
-  { id: 2, name: 'Figma', color: 'bg-purple-600' },
-  { id: 3, name: 'YouTube', color: 'bg-red-600' },
-  { id: 4, name: 'Twitter', color: 'bg-blue-400' },
-  { id: 5, name: 'LinkedIn', color: 'bg-blue-700' },
-  { id: 6, name: 'Dribbble', color: 'bg-pink-500' },
-];
+import { getWebsiteByDomain } from '../websites/registry';
+import type { HistoryEntry } from '../websites/types';
 
 export function Browser({ owner }: { owner?: string }) {
   const { t } = useI18n();
@@ -21,11 +14,94 @@ export function Browser({ owner }: { owner?: string }) {
   const [appState, setAppState] = useAppStorage('browser', {
     url: 'browser://welcome',
     bookmarks: [] as string[],
+    history: [] as HistoryEntry[],
   }, owner);
 
+  const [currentUrl, setCurrentUrl] = useState(appState.url);
+  const [urlInput, setUrlInput] = useState(appState.url);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const historyRef = useRef<HistoryEntry[]>(appState.history || []);
+
+  // Get current website and parse query parameters
+  const [urlPath, queryString] = currentUrl.split('?');
+  const currentWebsite = getWebsiteByDomain(urlPath);
+
+  // Parse query parameters
+  const params: Record<string, string> = {};
+  if (queryString) {
+    const searchParams = new URLSearchParams(queryString);
+    searchParams.forEach((value, key) => {
+      params[key] = value;
+    });
+  }
+
+  // Update URL input when navigating
+  useEffect(() => {
+    setUrlInput(currentUrl);
+  }, [currentUrl]);
+
+  // Navigate to URL
+  const navigate = (url: string) => {
+    const website = getWebsiteByDomain(url);
+    const finalUrl = website ? website.domain : url;
+
+    setCurrentUrl(finalUrl);
+    setAppState((s) => ({ ...s, url: finalUrl }));
+
+    // Add to history
+    const historyEntry: HistoryEntry = {
+      url: finalUrl,
+      title: website?.name || finalUrl,
+      timestamp: new Date(),
+      favicon: website?.color,
+    };
+
+    historyRef.current = [...historyRef.current.slice(0, historyIndex + 1), historyEntry];
+    setHistoryIndex(historyRef.current.length - 1);
+    setAppState((s) => ({ ...s, history: historyRef.current }));
+  };
+
+  // Handle URL bar submission
+  const handleUrlSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (urlInput.trim()) {
+      navigate(urlInput.trim());
+    }
+  };
+
+  // Navigation controls
+  const canGoBack = historyIndex > 0;
+  const canGoForward = historyIndex < appState.history.length - 1;
+
+  const goBack = () => {
+    if (canGoBack) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setCurrentUrl(historyRef.current[newIndex].url);
+    }
+  };
+
+  const goForward = () => {
+    if (canGoForward) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setCurrentUrl(historyRef.current[newIndex].url);
+    }
+  };
+
+  const goHome = () => {
+    navigate('browser://welcome');
+  };
+
+  const reload = () => {
+    // Force re-render by navigating to same URL
+    const url = currentUrl;
+    setCurrentUrl('');
+    setTimeout(() => setCurrentUrl(url), 0);
+  };
+
   const [tabs] = useState([
-    { id: 1, title: t('browser.tabs.welcome'), url: 'browser://welcome', active: true },
-    { id: 2, title: t('browser.tabs.newTab'), url: 'browser://newtab', active: false },
+    { id: 1, title: currentWebsite?.name || t('browser.tabs.welcome'), url: currentUrl, active: true },
   ]);
 
   const tabBar = (
@@ -50,75 +126,104 @@ export function Browser({ owner }: { owner?: string }) {
     </div>
   );
 
+  // Render security indicator
+  const getSecurityIcon = () => {
+    if (!currentWebsite) return <Lock className="w-3.5 h-3.5 text-gray-400" />;
+
+    switch (currentWebsite.security) {
+      case 'secure':
+        return <Lock className="w-3.5 h-3.5 text-green-600" />;
+      case 'warning':
+        return <AlertTriangle className="w-3.5 h-3.5 text-yellow-600" />;
+      case 'insecure':
+      case 'phishing':
+        return <AlertTriangle className="w-3.5 h-3.5 text-red-600" />;
+      default:
+        return <Lock className="w-3.5 h-3.5 text-gray-400" />;
+    }
+  };
+
   const content = (
     <div className="flex flex-col min-h-full">
       {/* Navigation Bar - Sticky */}
       <div className="sticky top-0 z-10 bg-gray-900/30 backdrop-blur-md border-b border-white/10 flex items-center px-3 py-2 gap-2">
         <div className="flex items-center gap-1">
-          <button className="p-1.5 hover:bg-white/10 rounded transition-colors text-white/70">
+          <button
+            onClick={goBack}
+            disabled={!canGoBack}
+            className={cn(
+              "p-1.5 rounded transition-colors",
+              canGoBack ? "hover:bg-white/10 text-white/70" : "text-white/30 cursor-not-allowed"
+            )}
+          >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <button className="p-1.5 hover:bg-white/10 rounded transition-colors text-white/70">
+          <button
+            onClick={goForward}
+            disabled={!canGoForward}
+            className={cn(
+              "p-1.5 rounded transition-colors",
+              canGoForward ? "hover:bg-white/10 text-white/70" : "text-white/30 cursor-not-allowed"
+            )}
+          >
             <ChevronRight className="w-4 h-4" />
           </button>
-          <button className="p-1.5 hover:bg-white/10 rounded transition-colors text-white/70">
+          <button
+            onClick={reload}
+            className="p-1.5 hover:bg-white/10 rounded transition-colors text-white/70"
+          >
             <RotateCw className="w-4 h-4" />
           </button>
-          <button className="p-1.5 hover:bg-white/10 rounded transition-colors text-white/70">
+          <button
+            onClick={goHome}
+            className="p-1.5 hover:bg-white/10 rounded transition-colors text-white/70"
+          >
             <Home className="w-4 h-4" />
           </button>
         </div>
 
         {/* URL Bar */}
-        <div className="flex-1 flex items-center gap-2 bg-black/20 rounded-lg px-3 py-1.5 border border-white/10 focus-within:ring-2 focus-within:ring-white/20 transition-all">
-          <Lock className="w-3.5 h-3.5 text-white/50" />
-          <input
-            type="text"
-            value={appState.url}
-            onChange={(e) => setAppState(s => ({ ...s, url: e.target.value }))}
-            className="flex-1 bg-transparent text-white text-sm focus:outline-none placeholder-white/30"
-          />
-          <Star className="w-3.5 h-3.5 text-white/50 hover:text-white/80 cursor-pointer" />
-        </div>
+        <form onSubmit={handleUrlSubmit} className="flex-1">
+          <div className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-1.5 border border-white/10 focus-within:ring-2 focus-within:ring-white/20 transition-all">
+            {getSecurityIcon()}
+            <input
+              type="text"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder={t('browser.searchPlaceholder')}
+              className="flex-1 bg-transparent text-white text-sm focus:outline-none placeholder-white/30"
+            />
+            <Star className="w-3.5 h-3.5 text-white/50 hover:text-white/80 cursor-pointer transition-colors" />
+          </div>
+        </form>
       </div>
 
-      {/* Page Content */}
-      <div className="flex-1 p-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl text-white mb-2 font-light">{t('browser.welcome.title')}</h1>
-          <p className="text-white/60 mb-8">{t('browser.welcome.subtitle')}</p>
-
-          <div className="grid grid-cols-3 gap-4">
-            {quickLinks.map((link) => (
+      {/* Website Content */}
+      <div className="flex-1 overflow-y-auto">
+        {currentWebsite ? (
+          <currentWebsite.component
+            domain={currentWebsite.domain}
+            onNavigate={navigate}
+            params={params}
+            owner={owner}
+          />
+        ) : (
+          <div className="min-h-full flex items-center justify-center bg-gray-900 text-white p-8">
+            <div className="text-center max-w-md">
+              <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+              <h1 className="text-2xl font-bold mb-2">{t('browser.error.pageNotFound')}</h1>
+              <p className="text-white/60 mb-6">
+                {t('browser.error.pageNotFoundDesc', { url: currentUrl })}
+              </p>
               <button
-                key={link.id}
-                className="h-32 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all flex flex-col items-center justify-center gap-3 group"
+                onClick={goHome}
+                className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
               >
-                <div className={`w-12 h-12 ${link.color} rounded-lg shadow-lg group-hover:scale-110 transition-transform`} />
-                <span className="text-white/80 text-sm">{link.name}</span>
+                {t('browser.error.goHome')}
               </button>
-            ))}
-          </div>
-
-          {/* Recent Activity */}
-          <div className="mt-12">
-            <h2 className="text-xl text-white mb-4 font-light">{t('browser.recentActivity')}</h2>
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="p-4 rounded-lg bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-between"
-                >
-                  <div>
-                    <div className="text-white text-sm mb-1">{t('browser.exampleWebsite', { index: i })}</div>
-                    <div className="text-white/40 text-xs">https://example{i}.com</div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-white/20" />
-                </div>
-              ))}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
