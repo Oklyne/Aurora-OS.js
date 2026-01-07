@@ -49,10 +49,12 @@ Deliver a **functional desktop OS** with real applications and natural usability
 
 **📦 Core Applications (Fully Functional)**
 
-* **Photos** — browse and open images
-* **Videos** — playback support
-* **Music** — playlists and playback
-* **Notepad** — edit and persist text
+* **Photos:** browse and open images
+* **Music:** playlists and playback
+* **Notepad:** edit and persist text
+* **Browser**: Systems in place for mail, bank, and search
+* **Mail**: Ready-to-inject mail app from NPC's.
+* **Messages**: Ready-to-inject messages app from NPC's.
 
 **🖥️ Desktop UX & System Tools**
 

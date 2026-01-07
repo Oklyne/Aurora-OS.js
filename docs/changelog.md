@@ -6,6 +6,14 @@ icon: arrows-rotate-reverse
 # Changelog
 
 {% updates format="full" %}
+{% update date="2026-01-09" %}
+## v0.8.2
+
+App-by-app review and consistency update
+
+_(WIP)_
+{% endupdate %}
+
 {% update date="2026-01-06" %}
 ## v0.8.1
 
@@ -16,6 +24,8 @@ Added functional Mail app and adapted the system to accommodate.
 <summary>Added</summary>
 
 * **Mail App**: Added mail app with basic functionality, to be further enhanced by gameplay logic and features in 0.9.x (just like Messages app should be enhanced by gameplay logic and features in 0.9.x).
+* **Browser App**: Vanilla core-websites that can be opened from the browser app. For now only TrustMail produces a result (eg. interoperability with Mail and filesystem).
+* **Translation**: ro-RO (Romanian), de-DE (German), and pt-BR (Portuguese) standard language added.
 
 </details>
 
@@ -26,6 +36,9 @@ Added functional Mail app and adapted the system to accommodate.
 * **Apps Main Menu**: Standardized to be included in \[app].tsx files.
 * **System States**: Improved the restart/log-out/shutdown logic.
 * **Apps**: Added user context to apps, so they can access user-specific data (eg. user specific home directory, user specific downloads directory, etc.)
+* **Apps**: Cross-app communication (Browser's TrustMail tied to the Mail app).
+* **Main Menu**: Added confirmation exit at "shutdown" and a force-save function, but also translation support (because Main Menu will be visible after language selection, too).
+* **Environment**: Improved the synchronization between dev. and build modules (TS > Vite > Electron) and added environment variables for development and production (language sync, etc.).
 
 </details>
 
