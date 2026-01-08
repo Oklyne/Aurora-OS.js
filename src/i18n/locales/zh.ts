@@ -1011,7 +1011,7 @@ export const zh: TranslationDict = {
 			noResults: '未找到语言',
 		},
 		validation: {
-			required: '请填写所有必填字段',
+			requiredFields: '请填写所有必填字段',
 			passwordLength: '密码长度必须至少为 6 个字符',
 			userExists: '用户已存在。请选择其他用户名。',
 			fullNameFormat: '全名只能包含字母、空格和连字符',
