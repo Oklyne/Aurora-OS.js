@@ -78,6 +78,7 @@ export const en: TranslationDict = {
     common: {
       close: 'Close',
       open: 'Open',
+      notAvailable: 'N/A',
     },
     sidebar: {
       toggleSidebar: 'Toggle Sidebar',
@@ -158,6 +159,7 @@ export const en: TranslationDict = {
     items: {
       newWindow: 'New Window',
       newFolder: 'New Folder',
+      open: 'Open',
       changeWallpaper: 'Change Wallpaper',
       closeWindow: 'Close Window',
       undo: 'Undo',
@@ -174,6 +176,7 @@ export const en: TranslationDict = {
       forward: 'Forward',
       enclosingFolder: 'Enclosing Folder',
       getInfo: 'Get Info',
+      moveToTrash: 'Move to Trash',
     },
     help: {
       appHelp: '{{appName}} Help',
@@ -251,6 +254,7 @@ export const en: TranslationDict = {
       error: 'Error',
       info: 'Info',
       warning: 'Warning',
+      fileError: 'File Error',
     },
   },
   memory: {
@@ -539,6 +543,7 @@ export const en: TranslationDict = {
     },
     actions: {
       moveToTrash: 'Move to Trash',
+      search: 'Search',
     },
     toasts: {
       permissionDenied: 'Permission denied: {{name}}',
@@ -553,11 +558,13 @@ export const en: TranslationDict = {
       moveFailedInvalidData: 'Move failed: Invalid data',
       failedToProcessDrop: 'Failed to process drop',
       couldNotGetInfo: 'Could not retrieve information',
+      fileTypeNotSupported: "File type '{{type}}' is not supported",
     },
     search: {
       noResultsTitle: 'No results found',
       noResultsDesc: 'No results found for "{{query}}"',
     },
+    emptyFolder: 'This folder is empty',
   },
   messages: {
     sidebar: {

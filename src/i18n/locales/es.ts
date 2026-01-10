@@ -71,6 +71,7 @@ export const es: TranslationDict = {
     common: {
       close: 'Cerrar',
       open: 'Abrir',
+      notAvailable: 'N/A',
     },
     sidebar: {
       toggleSidebar: 'Alternar barra lateral',
@@ -210,6 +211,7 @@ export const es: TranslationDict = {
     items: {
       newWindow: 'Nueva ventana',
       newFolder: 'Nueva Carpeta',
+      open: 'Abrir',
       changeWallpaper: 'Cambiar Fondo',
       closeWindow: 'Cerrar Ventana',
       undo: 'Deshacer',
@@ -226,6 +228,7 @@ export const es: TranslationDict = {
       forward: 'Adelante',
       enclosingFolder: 'Carpeta Superior',
       getInfo: 'Obtener Información',
+      moveToTrash: 'Mover a la papelera',
     },
     help: {
       appHelp: 'Ayuda de {{appName}}',
@@ -303,6 +306,7 @@ export const es: TranslationDict = {
       error: 'Error',
       info: 'Información',
       warning: 'Advertencia',
+      fileError: 'Error de archivo',
     },
   },
   memory: {
@@ -594,6 +598,7 @@ export const es: TranslationDict = {
     },
     actions: {
       moveToTrash: 'Mover a la papelera',
+      search: 'Buscar',
     },
     toasts: {
       permissionDenied: 'Permiso denegado: {{name}}',
@@ -608,11 +613,13 @@ export const es: TranslationDict = {
       moveFailedInvalidData: 'Movimiento fallido: datos inválidos',
       failedToProcessDrop: 'No se pudo procesar el arrastre',
       couldNotGetInfo: 'No se pudo obtener la información',
+      fileTypeNotSupported: "El tipo de archivo '{{type}}' no es compatible",
     },
     search: {
       noResultsTitle: 'No se encontraron resultados',
       noResultsDesc: 'No se encontraron resultados para "{{query}}"',
     },
+    emptyFolder: 'Esta carpeta está vacía',
   },
   messages: {
     sidebar: {

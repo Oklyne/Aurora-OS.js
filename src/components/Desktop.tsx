@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useRef, forwardRef } from 'react';
+import React, { useState, useEffect, memo, useRef, forwardRef } from 'react';
 import { useAppContext } from './AppContext';
 
 export interface DesktopIcon {
@@ -81,16 +81,16 @@ function DesktopComponent({ onDoubleClick, icons, onUpdateIconsPositions, onIcon
       const fullPath = resolvePath(`~/Desktop/${name}`);
       const node = getNodeAtPath(fullPath, activeUser);
        if (node) {
-           const modDate = node.modified ? new Date(node.modified).toLocaleDateString() : 'N/A';
+           const modDate = node.modified ? new Date(node.modified).toLocaleDateString() : t('a11y.common.notAvailable');
            const details = (
                <div className="flex flex-col gap-1 mt-1">
-                   <div className="grid grid-cols-[60px_1fr] gap-x-2">
+                   <div className="grid grid-cols-[max-content_1fr] gap-x-2">
                        <span className="text-white/50">{t('fileManager.details.type')}:</span>
                        <span className="text-white/90">{node.type}</span>
                        <span className="text-white/50">{t('fileManager.details.owner')}:</span>
                        <span className="text-white/90">{node.owner}</span>
                        <span className="text-white/50">{t('fileManager.details.permissions')}:</span>
-                       <span className="text-white/90 font-mono text-[11px]">{node.permissions || 'N/A'}</span>
+                       <span className="text-white/90 font-mono text-[11px]">{node.permissions || t('a11y.common.notAvailable')}</span>
                        <span className="text-white/50">{t('fileManager.details.modified')}:</span>
                        <span className="text-white/90">{modDate}</span>
                        {node.size !== undefined && (
@@ -114,7 +114,7 @@ function DesktopComponent({ onDoubleClick, icons, onUpdateIconsPositions, onIcon
 
       switch (action) {
         case 'new-folder':
-          createDirectory(resolvePath('~/Desktop'), 'New Folder', activeUser);
+          createDirectory(resolvePath('~/Desktop'), t('menubar.items.newFolder'), activeUser);
           break;
         case 'paste':
           pasteNodes(resolvePath('~/Desktop'), activeUser);
@@ -129,7 +129,7 @@ function DesktopComponent({ onDoubleClick, icons, onUpdateIconsPositions, onIcon
 
     window.addEventListener('app-menu-action', handleMenuAction as EventListener);
     return () => window.removeEventListener('app-menu-action', handleMenuAction as EventListener);
-  }, [createDirectory, resolvePath, onOpenApp, activeUser, pasteNodes]);
+  }, [createDirectory, resolvePath, onOpenApp, activeUser, pasteNodes, t]);
 
   // Selection State
 
@@ -331,7 +331,7 @@ function DesktopComponent({ onDoubleClick, icons, onUpdateIconsPositions, onIcon
 
   return (
     <ContextMenu>
-      <ContextMenuTrigger asChild>
+      <ContextMenuTrigger asChild disabled={selectedIcons.size > 0 && !selectionBox}>
         <div
           className="absolute inset-0 w-full h-full bg-cover bg-center transition-[background-image] duration-500"
           onMouseDown={handleDesktopMouseDown}
@@ -420,7 +420,7 @@ function DesktopComponent({ onDoubleClick, icons, onUpdateIconsPositions, onIcon
 }
 
 // Memoized Icon Component to prevent unnecessary re-renders
-interface DesktopIconItemProps {
+interface DesktopIconItemProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onDoubleClick' | 'onMouseDown' | 'onDragStart'> {
   icon: DesktopIcon;
   selected: boolean;
   dragging: boolean;
@@ -434,8 +434,6 @@ interface DesktopIconItemProps {
   onDoubleClick: (id: string) => void;
 }
 
-// ... (other imports)
-
 const DesktopIconItem = memo(forwardRef<HTMLDivElement, DesktopIconItemProps>(function DesktopIconItem({
   icon,
   selected,
@@ -447,7 +445,8 @@ const DesktopIconItem = memo(forwardRef<HTMLDivElement, DesktopIconItemProps>(fu
   onMouseDown,
   onDragStart,
   onDragEnd,
-  onDoubleClick
+  onDoubleClick,
+  ...props
 }, ref) {
   // Calculate temporary position if being dragged
   const position = dragging
@@ -457,12 +456,13 @@ const DesktopIconItem = memo(forwardRef<HTMLDivElement, DesktopIconItemProps>(fu
   return (
     <div
       ref={ref}
+      {...props}
       draggable
       onDragStart={(e) => onDragStart(e, icon)}
       onDragEnd={onDragEnd}
       className={`absolute flex flex-col items-center gap-1 p-2 rounded-lg cursor-pointer select-none 
       ${(!reduceMotion && !dragging) ? 'transition-all duration-75' : ''} 
-      ${selected ? 'bg-white/20 backdrop-blur-sm ring-1 ring-white/30' : 'hover:bg-white/5'}`}
+      ${selected ? 'bg-white/20 backdrop-blur-sm ring-1 ring-white/30' : 'hover:bg-white/5'} ${props.className || ''}`}
       style={{
         left: position.x,
         top: position.y,

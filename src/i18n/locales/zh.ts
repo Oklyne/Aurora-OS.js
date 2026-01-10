@@ -76,6 +76,7 @@ export const zh: TranslationDict = {
 		common: {
 			close: '关闭',
 			open: '打开',
+			notAvailable: '不可用',
 		},
 		sidebar: {
 			toggleSidebar: '切换侧边栏',
@@ -154,8 +155,9 @@ export const zh: TranslationDict = {
 			conversations: '对话',
 		},
 		items: {
-			newWindow: '新窗口',
+      newWindow: '新窗口',
       newFolder: '新建文件夹',
+      open: '打开',
       changeWallpaper: '更改壁纸',
       closeWindow: '关闭窗口',
 			undo: '撤销',
@@ -169,9 +171,10 @@ export const zh: TranslationDict = {
 			minimize: '最小化',
 			bringAllToFront: '全部置于最前',
 			back: '后退',
-			forward: '前进',
+      forward: '前进',
       enclosingFolder: '上级文件夹',
       getInfo: '显示简介',
+      moveToTrash: '移到废纸篓',
     },
     help: {
 			appHelp: '{{appName}} 帮助',
@@ -248,6 +251,7 @@ export const zh: TranslationDict = {
 			error: '错误',
 			info: '信息',
 			warning: '警告',
+			fileError: '文件错误',
 		},
 	},
 	memory: {
@@ -536,6 +540,7 @@ export const zh: TranslationDict = {
 		},
 		actions: {
 			moveToTrash: '移到废纸篓',
+			search: '搜索',
 		},
 		toasts: {
 			permissionDenied: '权限被拒绝：{{name}}',
@@ -550,11 +555,13 @@ export const zh: TranslationDict = {
 			moveFailedInvalidData: '移动失败：无效数据',
 			failedToProcessDrop: '处理拖放失败',
 			couldNotGetInfo: '无法获取信息',
+			fileTypeNotSupported: "不支持的文件类型 '{{type}}'",
 		},
 		search: {
 			noResultsTitle: '未找到结果',
 			noResultsDesc: '未找到 "{{query}}" 的结果',
 		},
+		emptyFolder: '此文件夹为空',
 	},
 	messages: {
 		sidebar: {

@@ -72,6 +72,7 @@ export const fr: TranslationDict = {
     common: {
       close: 'Fermer',
       open: 'Ouvrir',
+      notAvailable: 'N/A',
     },
     sidebar: {
       toggleSidebar: 'Basculer la barre latérale',
@@ -211,6 +212,7 @@ export const fr: TranslationDict = {
     items: {
       newWindow: 'Nouvelle fenêtre',
       newFolder: 'Nouveau dossier',
+      open: 'Ouvrir',
       changeWallpaper: "Changer le fond d'écran",
       closeWindow: 'Fermer la fenêtre',
       undo: 'Annuler',
@@ -227,6 +229,7 @@ export const fr: TranslationDict = {
       forward: 'Suivant',
       enclosingFolder: 'Dossier parent',
       getInfo: 'Lire les informations',
+      moveToTrash: 'Mettre à la corbeille',
     },
     help: {
       appHelp: 'Aide de {{appName}}',
@@ -304,6 +307,7 @@ export const fr: TranslationDict = {
       error: 'Erreur',
       info: 'Infos',
       warning: 'Avertissement',
+      fileError: 'Erreur de fichier',
     },
   },
   memory: {
@@ -596,6 +600,7 @@ export const fr: TranslationDict = {
     },
     actions: {
       moveToTrash: 'Mettre à la corbeille',
+      search: 'Rechercher',
     },
     toasts: {
       permissionDenied: 'Permission refusée : {{name}}',
@@ -610,11 +615,13 @@ export const fr: TranslationDict = {
       moveFailedInvalidData: 'Déplacement impossible : données invalides',
       failedToProcessDrop: 'Impossible de traiter le dépôt',
       couldNotGetInfo: 'Impossible de récupérer les informations',
+      fileTypeNotSupported: "Le type de fichier '{{type}}' n'est pas pris en charge",
     },
     search: {
       noResultsTitle: 'Aucun résultat trouvé',
       noResultsDesc: 'Aucun résultat trouvé pour "{{query}}"',
     },
+    emptyFolder: 'Ce dossier est vide',
   },
   messages: {
     sidebar: {

@@ -71,6 +71,7 @@ export const de: TranslationDict = {
     common: {
       close: 'Schließen',
       open: 'Öffnen',
+      notAvailable: 'N/A',
     },
     sidebar: {
       toggleSidebar: 'Seitenleiste umschalten',
@@ -157,10 +158,12 @@ export const de: TranslationDict = {
       toggleFullscreen: 'Vollbild umschalten',
       minimize: 'Minimieren',
       bringAllToFront: 'Alle nach vorne bringen',
+      open: 'Öffnen',
       back: 'Zurück',
       forward: 'Vorwärts',
       enclosingFolder: 'Übergeordneter Ordner',
       getInfo: 'Informationen',
+      moveToTrash: 'In den Papierkorb legen',
     },
     help: {
       appHelp: '{{appName}} Hilfe',
@@ -238,6 +241,7 @@ export const de: TranslationDict = {
       error: 'Fehler',
       info: 'Info',
       warning: 'Warnung',
+      fileError: 'Dateifehler',
     },
   },
   memory: {
@@ -529,6 +533,7 @@ export const de: TranslationDict = {
     },
     actions: {
       moveToTrash: 'In den Papierkorb verschieben',
+      search: 'Suchen',
     },
     toasts: {
       permissionDenied: 'Zugriff verweigert: {{name}}',
@@ -543,11 +548,13 @@ export const de: TranslationDict = {
       moveFailedInvalidData: 'Verschieben fehlgeschlagen: Ungültige Daten',
       failedToProcessDrop: 'Ablage konnte nicht verarbeitet werden',
       couldNotGetInfo: 'Informationen konnten nicht abgerufen werden',
+      fileTypeNotSupported: "Dateityp '{{type}}' wird nicht unterstützt",
     },
     search: {
       noResultsTitle: 'Keine Ergebnisse gefunden',
       noResultsDesc: 'Keine Ergebnisse für "{{query}}" gefunden',
     },
+    emptyFolder: 'Dieser Ordner ist leer',
   },
   messages: {
     sidebar: {

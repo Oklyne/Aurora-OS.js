@@ -71,6 +71,7 @@ export const ro: TranslationDict = {
         common: {
             close: 'Închide',
             open: 'Deschide',
+            notAvailable: 'N/A',
         },
         sidebar: {
             toggleSidebar: 'Comută Bara Laterală',
@@ -209,6 +210,7 @@ export const ro: TranslationDict = {
         items: {
             newWindow: 'Fereastră Nouă',
             newFolder: 'Dosar Nou',
+            open: 'Deschide',
             changeWallpaper: 'Schimbă imaginea de fundal',
             closeWindow: 'Închide fereastra',
             undo: 'Anulează',
@@ -225,6 +227,7 @@ export const ro: TranslationDict = {
             forward: 'Înainte',
             enclosingFolder: 'Dosar Părinte',
             getInfo: 'Obține informații',
+            moveToTrash: 'Mută la Coșul de gunoi',
         },
         help: {
             appHelp: 'Ajutor {{appName}}',
@@ -302,6 +305,7 @@ export const ro: TranslationDict = {
             error: 'Eroare',
             info: 'Informații',
             warning: 'Avertisment',
+            fileError: 'Eroare Fișier',
         },
     },
   memory: {
@@ -593,6 +597,7 @@ export const ro: TranslationDict = {
         },
         actions: {
             moveToTrash: 'Mută la Gunoi',
+            search: 'Caută',
         },
         toasts: {
             permissionDenied: 'Permisiune refuzată: {{name}}',
@@ -607,11 +612,13 @@ export const ro: TranslationDict = {
             moveFailedInvalidData: 'Mutare eșuată: Date invalide',
             failedToProcessDrop: 'Nu s-a putut procesa plasarea',
             couldNotGetInfo: 'Nu s-au putut obține informațiile',
+            fileTypeNotSupported: "Tipul de fișier '{{type}}' nu este suportat",
         },
         search: {
             noResultsTitle: 'Niciun rezultat găsit',
             noResultsDesc: 'Niciun rezultat găsit pentru "{{query}}"',
         },
+        emptyFolder: 'Acest folder este gol',
     },
     messages: {
         sidebar: {

@@ -191,16 +191,16 @@ export function FileManager({ id, initialPath, onOpenApp, owner }: { id: string;
        }
 
        if (node) {
-           const modDate = node.modified ? new Date(node.modified).toLocaleDateString() : 'N/A';
+           const modDate = node.modified ? new Date(node.modified).toLocaleDateString() : t('a11y.common.notAvailable');
            const details = (
                <div className="flex flex-col gap-1 mt-1">
-                   <div className="grid grid-cols-[60px_1fr] gap-x-2">
+                   <div className="grid grid-cols-[max-content_1fr] gap-x-2">
                        <span className="text-white/50">{t('fileManager.details.type')}:</span>
                        <span className="text-white/90">{node.type}</span>
                        <span className="text-white/50">{t('fileManager.details.owner')}:</span>
                        <span className="text-white/90">{node.owner}</span>
                        <span className="text-white/50">{t('fileManager.details.permissions')}:</span>
-                       <span className="text-white/90 font-mono text-[11px]">{node.permissions || 'N/A'}</span>
+                       <span className="text-white/90 font-mono text-[11px]">{node.permissions || t('a11y.common.notAvailable')}</span>
                        <span className="text-white/50">{t('fileManager.details.modified')}:</span>
                        <span className="text-white/90">{modDate}</span>
                        {node.size !== undefined && (
@@ -226,11 +226,11 @@ export function FileManager({ id, initialPath, onOpenApp, owner }: { id: string;
       switch (action) {
         case 'new-folder': {
           // Replaced handleCreateFolder logic here
-          let name = "New Folder";
+          let name = t('menubar.items.newFolder');
           let counter = 1;
           const checkExists = (n: string) => items.some(i => i.name === n);
           while (checkExists(name)) {
-              name = `New Folder ${counter}`;
+              name = `${t('menubar.items.newFolder')} ${counter}`;
               counter++;
           }
           createDirectory(currentPath, name, activeUser);
@@ -844,15 +844,15 @@ export function FileManager({ id, initialPath, onOpenApp, owner }: { id: string;
 
       if (movedCount > 0) {
         if (movedCount === 1) {
-            notify.system('success', t('fileManager.subtitles.moved') || 'Moved', t('fileManager.toasts.movedItem') || 'Moved 1 item');
+            notify.system('success', t('notifications.subtitles.moved') || 'Moved', t('fileManager.toasts.movedItem') || 'Moved 1 item');
         } else {
-            notify.system('success', t('fileManager.subtitles.moved') || 'Moved', t('fileManager.toasts.movedItems', { count: movedCount }) || `Moved ${movedCount} items`);
+            notify.system('success', t('notifications.subtitles.moved') || 'Moved', t('fileManager.toasts.movedItems', { count: movedCount }) || `Moved ${movedCount} items`);
         }
         // feedback.move(); // Assuming feedback is defined elsewhere
       }
     } catch (err) {
       console.error('Drop error:', err);
-      notify.system('error', t('fileManager.subtitles.failed') || 'Failed', t('fileManager.toasts.failedToProcessDrop') || 'Failed to process drop');
+      notify.system('error', t('notifications.subtitles.failed') || 'Failed', t('fileManager.toasts.failedToProcessDrop') || 'Failed to process drop');
     }
   }, [currentPath, moveNodeById, activeUser, t, setIsDraggingOver]);
 
@@ -1063,6 +1063,7 @@ export function FileManager({ id, initialPath, onOpenApp, owner }: { id: string;
                     icon={Search}
                     title={t('fileManager.search.noResultsTitle') || "No results found"}
                     description={t('fileManager.search.noResultsDesc', { query: searchQuery }) || `No results found for "${searchQuery}"`}
+                    className="h-full"
                 />
             ) : (
                 <div className="flex flex-col gap-1 p-2 w-full">
@@ -1088,11 +1089,11 @@ export function FileManager({ id, initialPath, onOpenApp, owner }: { id: string;
             )}
         </div>
       ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-full text-white/40">
-           {/* Wrap Empty State with Background Context Menu too? Yes, but handled in outer ref */}
-          <FolderOpen className="w-16 h-16 mb-4" />
-          <p>This folder is empty</p>
-        </div>
+        <EmptyState
+          icon={FolderOpen}
+          title={t('fileManager.emptyFolder') || "This folder is empty"}
+          className="h-full"
+        />
       ) : appState.viewMode === 'grid' ? (
         <ResponsiveGrid minItemWidth={110} className="gap-6">
           {items.map((item) => 
