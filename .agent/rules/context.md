@@ -3,15 +3,19 @@
 <!-- OPTIMIZED_FOR: GEMINI_3_PRO_HIGH -->
 
 <project_identity>
+
 **Aurora OS.js**: Ultra-realistic web-based OS simulator and hacking simulator game (React 19/Vite/Electron).
 **Goal**: High-fidelity hacking/sysadmin simulation (Linux/macOS hybrid).
 **Core Philosphy**: "Files-First". State acts as a view layer over the Virtual File System (VFS).
+
 </project_identity>
 
 <tech_stack>
+
 **Core**: React 19, TypeScript, Vite, Tailwind CSS (v4), Radix UI.
 **Platform**: Web (PWA) + Desktop (Electron).
 **State**: React Context + `localStorage` persistence.
+
 </tech_stack>
 
 <architecture_mechanics>
@@ -49,7 +53,8 @@
     - **Realism**: Global mute (`Howler.mute(true)`) silences the system without stopping background processes (e.g., music keep "playing" silently).
     - **Binary Metadata**: Custom ID3 parser (`src/utils/id3Parser.ts`) extracts professional tags (TIT2, TPE1, TALB) from MP3 files.
     - **Asset Fetching**: Metadata resolution for local assets uses `fetch` with `Range: bytes=0-512KB` to efficiently read headers without full downloads.
-    </architecture_mechanics>
+
+</architecture_mechanics>
 
 <critical_rules>
 
@@ -61,28 +66,34 @@
 - **I18n**: All UI strings MUST use `useI18n()`. definition: `src/i18n/locales/en.ts`.
 - **Accessibility**: All `Dialog` or `AlertDialog` components MUST include a `Title` and `Description`. Use `sr-only` class to hide them if they clash with visual design but are required for A11y.
 - **Docs Sync**: On architecture changes, update `.agent/rules/context.md` & `public/llms-full.txt`.
-  </critical_rules>
+
+</critical_rules>
 
 <codebase_map>
+
 | Path | Component | Description |
 | :--- | :--- | :--- |
 | `src/components/FileSystemContext.tsx` | **VFS Core** | Context for all FS operations. |
-| `src/utils/fileSystemUtils.ts" | **VFS Utils** | `FileNode` types, `initialFileSystem`, permission logic. |
+| `src/utils/fileSystemUtils.ts` | **VFS Utils** | `FileNode` types, `initialFileSystem`, permission logic. |
 | `src/components/AppContext.tsx` | **Session** | Theme, Wallpapers, Physical User session. |
 | `src/config/appRegistry.ts` | **Registry** | Installed Apps configuration. |
 | `src/services/notifications.tsx` | **Notifications** | Central service for rich system toasts. |
 | `src/services/sound.ts` | **Sound Manager** | Global audio state and Howler integration. |
-| `src/utils/id3Parser.ts" | **ID3 Parser** | Binary metadata extractor for MP3 files. |
+| `src/utils/id3Parser.ts` | **ID3 Parser** | Binary metadata extractor for MP3 files. |
 | `src/components/apps/*` | **Apps** | Individual App components (Notepad, Terminal, etc). |
+
 </codebase_map>
 
 <ai_context>
+
 **External Alignment**:
 -   `public/llms.txt`: Standard entry point for external AI agents (summary + links).
 -   `public/llms-full.txt`: Full system context (mirror of this file) for deep understanding.
+
 </ai_context>
 
 <mcp_usage>
+
 **Server**: `aurora-os-docs`
 **Source**: `mental-os/Aurora-OS.js` via `gitmcp.io`.
 **Purpose**: Retrieval Augmented Generation (RAG) for codebase documentation.
@@ -93,4 +104,5 @@
 -   `search_Aurora_OS_js_documentation(query)`: Semantic search over docs.
 -   `fetch_Aurora_OS_js_documentation()`: Fetch full README/Docs.
 -   `search_Aurora_OS_js_code(query)`: Search code via GitHub API.
+
 </mcp_usage>
