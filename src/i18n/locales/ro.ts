@@ -571,6 +571,7 @@ export const ro: TranslationDict = {
         toasts: {
             musicNotInstalled: 'Muzica nu este instalată. Instaleaz-o din App Store.',
             notepadNotInstalled: 'Notepad nu este instalat. Instalează-l din App Store.',
+            photosNotInstalled: 'Aplicația Fotografii nu este instalată. Instaleaz-o din App Store.',
         },
     },
     fileManager: {
@@ -605,6 +606,7 @@ export const ro: TranslationDict = {
             permissionDenied: 'Permisiune refuzată: {{name}}',
             musicNotInstalled: 'Muzica nu este instalată. Instaleaz-o din App Store.',
             notepadNotInstalled: 'Notepad nu este instalat. Instalează-l din App Store.',
+            photosNotInstalled: 'Aplicația Fotografii nu este instalată. Instaleaz-o din App Store.',
             movedItem: '1 element mutat',
             movedItems: 'S-au mutat {{count}} elemente',
             movedItemTo: '1 element mutat în {{target}}',
@@ -660,6 +662,30 @@ export const ro: TranslationDict = {
             slideshow: 'Diaporamă',
             rotateClockwise: 'Rotește Dreapta',
             rotateCounterClockwise: 'Rotește Stânga',
+        },
+        empty: {
+            recent: {
+                title: 'Nicio fotografie vizualizată recent',
+                description: 'Fotografiile tale deschise recent vor apărea aici.',
+            },
+            favorites: {
+                title: 'Nicio favorită încă',
+                description: 'Marchează fotografiile ca favorite pentru a le vedea aici.',
+            },
+            library: {
+                title: 'Nu s-au găsit fotografii',
+                description: 'Nu s-au găsit fișiere foto în dosarul Imagini.',
+                openFolder: 'Deschide dosarul {{folder}}',
+            },
+            noFolder: {
+                title: "Biblioteca lui {{user}} nu a fost găsită",
+                description: 'Dosarul {{path}} nu a fost găsit pentru acest utilizator.',
+            },
+            openHome: 'Deschide Directorul Acasă',
+        },
+        folders: {
+            pictures: 'Imagini',
+            home: 'Acasă',
         },
     },
     mail: {

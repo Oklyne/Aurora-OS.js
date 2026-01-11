@@ -526,13 +526,23 @@ export function Notepad({ id, owner, initialPath }: NotepadProps) {
 
   // -- Window Data / Initial Path Interception (File Opening) --
   const tabsRefForOpening = useRef(tabs);
+  const processedTimestampRef = useRef<number | null>(null);
+  
   useEffect(() => {
     tabsRefForOpening.current = tabs;
   }, [tabs]);
 
   useEffect(() => {
     const path = initialPath || windowContext?.data?.path;
-    if (path) {
+    const timestamp = windowContext?.data?.timestamp;
+    const isFresh = timestamp && (Date.now() - timestamp < 2000);
+    
+    // Logic: Only process if it's a new and fresh timestamp
+    const isNewTimestamp = timestamp && timestamp !== processedTimestampRef.current;
+    
+    if (path && isNewTimestamp && isFresh) {
+      if (timestamp) processedTimestampRef.current = timestamp;
+      
       // Use ref to avoid closure staleness and dependency on tabs
       const currentTabs = tabsRefForOpening.current;
       const existingTab = currentTabs.find((t) => t.path === path);

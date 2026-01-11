@@ -1,17 +1,17 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import pkg from '../../package.json';
 import { Orbit, Wifi } from 'lucide-react';
-import { useThemeColors } from '../hooks/useThemeColors';
-import { useFullscreen } from '../hooks/useFullscreen';
-import { CreditsDrawer } from './Credits/CreditsDrawer';
-import { cn } from './ui/utils';
-import { useAppContext } from './AppContext';
-import { useFileSystem } from './FileSystemContext';
-import { AudioApplet } from './AudioApplet';
-import { NotificationCenter } from './NotificationCenter';
-import { BatteryApplet } from './BatteryApplet';
-import { MemoryApplet } from './MemoryApplet';
-import { hardReset, clearSession, STORAGE_KEYS } from '../utils/memory';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import { useFullscreen } from '@/hooks/useFullscreen';
+import { CreditsDrawer } from '@/components/Credits/CreditsDrawer';
+import { cn } from '@/components/ui/utils';
+import { useAppContext } from '@/components/AppContext';
+import { useFileSystem } from '@/components/FileSystemContext';
+import { AudioApplet } from '@/components/AudioApplet';
+import { NotificationCenter } from '@/components/NotificationCenter';
+import { BatteryApplet } from '@/components/BatteryApplet';
+import { MemoryApplet } from '@/components/MemoryApplet';
+import { hardReset, clearSession, STORAGE_KEYS } from '@/utils/memory';
 import {
   Menubar,
   MenubarMenu,

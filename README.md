@@ -13,12 +13,24 @@ It’s not a finished game, yet. It’s the foundation: a playable, extensible v
 
 Even in its current proof‑of‑concept state, Aurora OS already solves the hard problems:
 
-- 🗂 Virtual filesystem (persistent, sandboxed)
-- 🧠 App lifecycle & OS‑level user flow
-- 💻 Functional bash‑like terminal
-- 🧩 Modular app architecture with context-aware Menu Bar system
-- 📝 Notepad app with syntax highlighting for: .txt, .md, .js, .jsx, .css, .html, .sh, and more
-- 🎛 Window management & desktop UX
+- 🗂 **Virtual User Space**: Persistent `localStorage` filesystem with real user permissions (`rwx`), user homes, and multi-user isolation (`root`, `guest`, custom users).
+- 🧠 **App Engine**: Window management, z-indexing, process lifecycle, and a global context-aware Menu Bar.
+- 💻 **Terminal**: Bash-like environment with pipes, IO redirection, history, and internal commands (`ls`, `cat`, `grep`, `sudo`, `su`).
+- � **System Apps**:
+  - **Finder**: Drag & drop file management, list/grid views, and trash can.
+  - **App Store**: Install/uninstall apps with permission checks (`sudo` support).
+  - **Settings**: System configuration, user management, and personalization.
+  - **DevCenter**: System diagnostics and logs.
+- 🎨 **Creative & Media**:
+  - **Photos**: Full gallery with albums, favorites, lightbox, and reactive library scanning.
+  - **Music**: Playlist management, background playback, and binary ID3 metadata parsing.
+- 📝 **Productivity & Internet**:
+  - **Notepad**: Monaco-like editor with syntax highlighting for 10+ languages.
+  - **Browser**: Functional web browser simulation with history and tabs.
+  - **Mail**: Email client simulation with attachments and multiple mailboxes.
+  - **Calendar**: Event management with drag & drop support.
+  - **Messages**: Chat interface simulation.
+- � **Localization**: Fully translated in English, German, Spanish, French, Portuguese, Romanian, and Chinese.
 
 ## 🧭 Where This Is Going
 
@@ -104,6 +116,23 @@ npm run dev
 Or use the [GitHub Pages](https://mental-os.github.io/Aurora-OS.js) (LIVE DEMO)
 
 ## Release Notes (v0.8.4)
+
+### Added
+
+- **Photos App**: Full-featured gallery with albums, favorites, lightbox, and background library scanning.
+- **Mock Content**: Initial set of high-quality mock images seeded to `~/Pictures`.
+
+### Improved
+
+- **Architecture**: Standardized internal imports to use absolute `@/` alias.
+- **Multi-User**: Enhanced app isolation (local providers) for `sudo`/`su` sessions.
+- **Localization**: Achieved 100% translation parity across all 7 supported languages.
+
+### Fixed
+
+- **System Stability**: Resolved "System Critical Error" caused by React Context duplication.
+- **Finder**: Fixed double-click launch reliability and "Open Folder" case-sensitivity issues.
+- **Session**: Prevented apps from auto-playing/opening content when restoring old sessions.
 
 ### [View full version history](HISTORY.md)
 

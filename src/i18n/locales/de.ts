@@ -507,6 +507,7 @@ export const de: TranslationDict = {
     toasts: {
       musicNotInstalled: 'Die Musik-App ist nicht installiert. Installiere sie im App Store.',
       notepadNotInstalled: 'Notizblock ist nicht installiert. Installiere ihn im App Store.',
+      photosNotInstalled: 'Die Fotos-App ist nicht installiert. Installiere sie im App Store.',
     },
   },
   fileManager: {
@@ -541,6 +542,7 @@ export const de: TranslationDict = {
       permissionDenied: 'Zugriff verweigert: {{name}}',
       musicNotInstalled: 'Die Musik-App ist nicht installiert. Installiere sie im App Store.',
       notepadNotInstalled: 'Notizblock ist nicht installiert. Installiere ihn im App Store.',
+      photosNotInstalled: 'Die Fotos-App ist nicht installiert. Installiere sie im App Store.',
       movedItem: '1 Element verschoben',
       movedItems: '{{count}} Elemente verschoben',
       movedItemTo: '1 Element nach {{target}} verschoben',
@@ -575,29 +577,53 @@ export const de: TranslationDict = {
       muteNotifications: 'Benachrichtigungen stummschalten',
     },
   },
-  photos: {
-    sidebar: {
-      libraryTitle: 'Mediathek',
-      albumsTitle: 'Alben',
+    photos: {
+      sidebar: {
+        libraryTitle: 'Mediathek',
+        albumsTitle: 'Alben',
+      },
+      library: {
+        allPhotos: 'Alle Fotos',
+        favorites: 'Favoriten',
+        recent: 'Zuletzt',
+        people: 'Personen',
+        places: 'Orte',
+      },
+      albums: {
+        vacation2024: 'Urlaub 2024',
+        family: 'Familie',
+        nature: 'Natur',
+      },
+      menu: {
+        slideshow: 'Diashow',
+        rotateClockwise: 'Im Uhrzeigersinn drehen',
+        rotateCounterClockwise: 'Gegen den Uhrzeigersinn drehen',
+      },
+      empty: {
+        recent: {
+          title: 'Keine kürzlich angesehenen Fotos',
+          description: 'Ihre zuletzt geöffneten Fotos werden hier angezeigt.',
+        },
+        favorites: {
+          title: 'Noch keine Favoriten',
+          description: 'Markieren Sie Fotos als Favoriten, um sie hier zu sehen.',
+        },
+        library: {
+          title: 'Keine Fotos gefunden',
+          description: 'In Ihrem Bilder-Ordner wurden keine Fotodateien gefunden.',
+          openFolder: '{{folder}}-Ordner öffnen',
+        },
+        noFolder: {
+          title: "Mediathek von {{user}} nicht gefunden",
+          description: 'Der Ordner {{path}} wurde für diesen Benutzer nicht gefunden.',
+        },
+        openHome: 'Home-Verzeichnis öffnen',
+      },
+      folders: {
+        pictures: 'Bilder',
+        home: 'Home',
+      },
     },
-    library: {
-      allPhotos: 'Alle Fotos',
-      favorites: 'Favoriten',
-      recent: 'Zuletzt',
-      people: 'Personen',
-      places: 'Orte',
-    },
-    albums: {
-      vacation2024: 'Urlaub 2024',
-      family: 'Familie',
-      nature: 'Natur',
-    },
-    menu: {
-      slideshow: 'Diashow',
-      rotateClockwise: 'Im Uhrzeigersinn drehen',
-      rotateCounterClockwise: 'Gegen den Uhrzeigersinn drehen',
-    },
-  },
   mail: {
     login: {
       title: 'E-Mail',

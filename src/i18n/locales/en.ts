@@ -517,6 +517,7 @@ export const en: TranslationDict = {
     toasts: {
       musicNotInstalled: 'Music app is not installed. Install it from the App Store.',
       notepadNotInstalled: 'Notepad is not installed. Install it from the App Store.',
+      photosNotInstalled: 'Photos app is not installed. Install it from the App Store.',
     },
   },
   fileManager: {
@@ -551,6 +552,7 @@ export const en: TranslationDict = {
       permissionDenied: 'Permission denied: {{name}}',
       musicNotInstalled: 'Music app is not installed. Install it from the App Store.',
       notepadNotInstalled: 'Notepad is not installed. Install it from the App Store.',
+      photosNotInstalled: 'Photos app is not installed. Install it from the App Store.',
       movedItem: 'Moved 1 item',
       movedItems: 'Moved {{count}} items',
       movedItemTo: 'Moved 1 item to {{target}}',
@@ -606,6 +608,30 @@ export const en: TranslationDict = {
       slideshow: 'Slideshow',
       rotateClockwise: 'Rotate Clockwise',
       rotateCounterClockwise: 'Rotate Counter Clockwise',
+    },
+    empty: {
+      recent: {
+        title: 'No recently viewed photos',
+        description: 'Your recently opened photos will appear here.',
+      },
+      favorites: {
+        title: 'No favorites yet',
+        description: 'Mark photos as favorites to see them here.',
+      },
+      library: {
+        title: 'No photos found',
+        description: 'No photo files were found in your Pictures folder.',
+        openFolder: 'Open {{folder}} Folder',
+      },
+      noFolder: {
+        title: "{{user}}'s Library Not Found",
+        description: 'The folder {{path}} was not found for this user.',
+      },
+      openHome: 'Open Home Directory',
+    },
+    folders: {
+      pictures: 'Pictures',
+      home: 'Home',
     },
   },
   mail: {

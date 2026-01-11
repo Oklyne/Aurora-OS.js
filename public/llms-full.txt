@@ -32,6 +32,7 @@
 3.  **App Engine**:
     - **Registry**: `src/config/appRegistry.ts` (Definition source of truth). 
     - **Runtime**: Apps render in `WindowContext`.
+    - **Multi-user Isolation**: Apps MUST handle `owner` props. If `owner` differs from `activeUser`, wrap internal logic in a local Provider (e.g., `PhotosProvider`) passed with that `owner`. This ensures correct `~/` path resolution for elevated/switched sessions (sudo/su).
     - **ContextMenu**: Can be global (registry `contextMenu`) or localized (wrapping specific UI areas with `ContextMenuTrigger` in the app component).
     - **Persistence**: Per-app storage via `useAppStorage` (key: `app-user`) or manual `localStorage` with `getAppStateKey`.
 
@@ -56,6 +57,7 @@
 - **FS Integrity**: ALWAYS use `createFile`, `writeFile`, `deleteNode` from `useFileSystem`.
 - **Trash Resolution**: `moveToTrash` MUST resolve path based on `asUser` context (e.g., `/root/.Trash`).
 - **Path Resolution**: Use absolute paths. Resolve relative via `resolvePath(path, cwd)`.
+- **Imports**: Use absolute `@/` alias for all internal imports (e.g., `@/components/AppContext`).
 - **Security**: Check permissions via `checkPermissions(node, user, 'read'|'write'|'execute')`.
 - **UI Integrity**: Use `forwardRef` for any component used with `<ContextMenuTrigger asChild>` to ensure Radix UI ref handling works.
 - **I18n**: All UI strings MUST use `useI18n()`. definition: `src/i18n/locales/en.ts`.
@@ -70,6 +72,7 @@
 | `src/utils/fileSystemUtils.ts" | **VFS Utils** | `FileNode` types, `initialFileSystem`, permission logic. |
 | `src/components/AppContext.tsx` | **Session** | Theme, Wallpapers, Physical User session. |
 | `src/config/appRegistry.ts` | **Registry** | Installed Apps configuration. |
+| `src/services/notifications.tsx` | **Notifications** | Central service for rich system toasts. |
 | `src/services/notifications.tsx` | **Notifications** | Central service for rich system toasts. |
 | `src/services/sound.ts` | **Sound Manager** | Global audio state and Howler integration. |
 | `src/utils/id3Parser.ts" | **ID3 Parser** | Binary metadata extractor for MP3 files. |

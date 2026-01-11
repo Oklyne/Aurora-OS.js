@@ -572,6 +572,7 @@ export const es: TranslationDict = {
     toasts: {
       musicNotInstalled: 'La app Música no está instalada. Instálala desde la App Store.',
       notepadNotInstalled: 'La app Bloc de notas no está instalada. Instálala desde la App Store.',
+      photosNotInstalled: 'La app Fotos no está instalada. Instálala desde la App Store.',
     },
   },
   fileManager: {
@@ -606,6 +607,7 @@ export const es: TranslationDict = {
       permissionDenied: 'Permiso denegado: {{name}}',
       musicNotInstalled: 'La app Música no está instalada. Instálala desde la App Store.',
       notepadNotInstalled: 'La app Bloc de notas no está instalada. Instálala desde la App Store.',
+      photosNotInstalled: 'La app Fotos no está instalada. Instálala desde la App Store.',
       movedItem: 'Se movió 1 elemento',
       movedItems: 'Se movieron {{count}} elementos',
       movedItemTo: 'Se movió 1 elemento a {{target}}',
@@ -640,29 +642,53 @@ export const es: TranslationDict = {
       muteNotifications: 'Silenciar notificaciones',
     },
   },
-  photos: {
-    sidebar: {
-      libraryTitle: 'Biblioteca',
-      albumsTitle: 'Álbumes',
+    photos: {
+      sidebar: {
+        libraryTitle: 'Biblioteca',
+        albumsTitle: 'Álbumes',
+      },
+      library: {
+        allPhotos: 'Todas las fotos',
+        favorites: 'Favoritos',
+        recent: 'Recientes',
+        people: 'Personas',
+        places: 'Lugares',
+      },
+      albums: {
+        vacation2024: 'Vacaciones 2024',
+        family: 'Familia',
+        nature: 'Naturaleza',
+      },
+      menu: {
+        slideshow: 'Presentación',
+        rotateClockwise: 'Girar a la derecha',
+        rotateCounterClockwise: 'Girar a la izquierda',
+      },
+      empty: {
+        recent: {
+          title: 'No hay fotos vistas recientemente',
+          description: 'Tus fotos abiertas recientemente aparecerán aquí.',
+        },
+        favorites: {
+          title: 'Aún no hay favoritos',
+          description: 'Marca fotos como favoritas para verlas aquí.',
+        },
+        library: {
+          title: 'No se encontraron fotos',
+          description: 'No se encontraron archivos de fotos en tu carpeta de Imágenes.',
+          openFolder: 'Abrir carpeta {{folder}}',
+        },
+        noFolder: {
+          title: "Biblioteca de {{user}} no encontrada",
+          description: 'No se encontró la carpeta {{path}} para este usuario.',
+        },
+        openHome: 'Abrir directorio de inicio',
+      },
+      folders: {
+        pictures: 'Imágenes',
+        home: 'Inicio',
+      },
     },
-    library: {
-      allPhotos: 'Todas las fotos',
-      favorites: 'Favoritos',
-      recent: 'Recientes',
-      people: 'Personas',
-      places: 'Lugares',
-    },
-    albums: {
-      vacation2024: 'Vacaciones 2024',
-      family: 'Familia',
-      nature: 'Naturaleza',
-    },
-    menu: {
-      slideshow: 'Presentación',
-      rotateClockwise: 'Girar a la derecha',
-      rotateCounterClockwise: 'Girar a la izquierda',
-    },
-  },
   mail: {
     login: {
       title: 'Correo',

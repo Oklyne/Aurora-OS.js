@@ -513,6 +513,7 @@ export const pt: TranslationDict = {
     toasts: {
       musicNotInstalled: 'O app Música não está instalado. Instale na Loja de Apps.',
       notepadNotInstalled: 'O Bloco de Notas não está instalado. Instale na Loja de Apps.',
+      photosNotInstalled: 'O app Fotos não está instalado. Instale na Loja de Apps.',
     },
   },
   fileManager: {
@@ -547,6 +548,7 @@ export const pt: TranslationDict = {
       permissionDenied: 'Permissão negada: {{name}}',
       musicNotInstalled: 'O app Música não está instalado. Instale na Loja de Apps.',
       notepadNotInstalled: 'O Bloco de Notas não está instalado. Instale na Loja de Apps.',
+      photosNotInstalled: 'O app Fotos não está instalado. Instale na Loja de Apps.',
       movedItem: '1 item movido',
       movedItems: '{{count}} itens movidos',
       movedItemTo: '1 item movido para {{target}}',
@@ -581,29 +583,53 @@ export const pt: TranslationDict = {
       muteNotifications: 'Silenciar notificações',
     },
   },
-  photos: {
-    sidebar: {
-      libraryTitle: 'Biblioteca',
-      albumsTitle: 'Álbuns',
+    photos: {
+      sidebar: {
+        libraryTitle: 'Biblioteca',
+        albumsTitle: 'Álbuns',
+      },
+      library: {
+        allPhotos: 'Todas as fotos',
+        favorites: 'Favoritas',
+        recent: 'Recentes',
+        people: 'Pessoas',
+        places: 'Locais',
+      },
+      albums: {
+        vacation2024: 'Férias 2024',
+        family: 'Família',
+        nature: 'Natureza',
+      },
+      menu: {
+        slideshow: 'Apresentação',
+        rotateClockwise: 'Girar no sentido horário',
+        rotateCounterClockwise: 'Girar no sentido anti-horário',
+      },
+      empty: {
+        recent: {
+          title: 'Nenhuma foto visualizada recentemente',
+          description: 'Fotos que você abriu recentemente aparecerão aqui.',
+        },
+        favorites: {
+          title: 'Nenhuma favorita ainda',
+          description: 'Marque fotos como favoritas para vê-las aqui.',
+        },
+        library: {
+          title: 'Nenhuma foto encontrada',
+          description: 'Nenhum arquivo de foto foi encontrado na sua pasta Imagens.',
+          openFolder: 'Abrir pasta {{folder}}',
+        },
+        noFolder: {
+          title: "Biblioteca de {{user}} não encontrada",
+          description: 'A pasta {{path}} não foi encontrada para este usuário.',
+        },
+        openHome: 'Abrir pasta pessoal',
+      },
+      folders: {
+        pictures: 'Imagens',
+        home: 'Início',
+      },
     },
-    library: {
-      allPhotos: 'Todas as fotos',
-      favorites: 'Favoritas',
-      recent: 'Recentes',
-      people: 'Pessoas',
-      places: 'Locais',
-    },
-    albums: {
-      vacation2024: 'Férias 2024',
-      family: 'Família',
-      nature: 'Natureza',
-    },
-    menu: {
-      slideshow: 'Apresentação',
-      rotateClockwise: 'Girar no sentido horário',
-      rotateCounterClockwise: 'Girar no sentido anti-horário',
-    },
-  },
   mail: {
     login: {
       title: 'E-mail',
