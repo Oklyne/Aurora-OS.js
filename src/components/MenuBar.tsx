@@ -388,7 +388,7 @@ function MenuBarComponent({ focusedApp, onOpenApp }: MenuBarProps) {
           <Wifi className="w-4 h-4" />
         </button>
         <AudioApplet />
-        <NotificationCenter />
+        <NotificationCenter onOpenApp={onOpenApp} />
 
         <button 
           onClick={() => setTimeMode(timeMode === 'server' ? 'local' : 'server')}

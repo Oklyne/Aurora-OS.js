@@ -6,13 +6,27 @@ import { useThemeColors } from '../hooks/useThemeColors';
 import { useState } from 'react';
 import { useI18n } from '../i18n/index';
 
-export function NotificationCenter() {
+interface Notification {
+  id: number;
+  icon: any;
+  title: string;
+  message: string;
+  time: string;
+  color: string;
+  appId?: string;
+}
+
+interface NotificationCenterProps {
+  onOpenApp?: (appId: string) => void;
+}
+
+export function NotificationCenter({ onOpenApp }: NotificationCenterProps) {
   const { accentColor, reduceMotion, disableShadows } = useAppContext();
   const { blurStyle, getBackgroundColor } = useThemeColors();
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useI18n();
 
-  const notifications = [
+  const notifications: Notification[] = [
     {
       id: 1,
       icon: Mail,
@@ -20,6 +34,7 @@ export function NotificationCenter() {
       message: t('notifications.items.newEmail.message', { count: 3 }),
       time: t('notifications.time.minutesAgo', { minutes: 5 }),
       color: 'text-blue-500',
+      appId: 'mail',
     },
     {
       id: 2,
@@ -28,6 +43,7 @@ export function NotificationCenter() {
       message: t('notifications.items.meetingReminder.message', { minutes: 15 }),
       time: t('notifications.time.minutesAgo', { minutes: 10 }),
       color: 'text-red-500',
+      appId: 'calendar',
     },
     {
       id: 3,
@@ -36,6 +52,7 @@ export function NotificationCenter() {
       message: t('notifications.items.newMessage.message', { sender: 'Sarah' }),
       time: t('notifications.time.hoursAgo', { hours: 1 }),
       color: 'text-green-500',
+      appId: 'messages',
     },
     {
       id: 4,
@@ -44,8 +61,16 @@ export function NotificationCenter() {
       message: t('notifications.items.downloadComplete.message', { filename: 'project-files.zip' }),
       time: t('notifications.time.hoursAgo', { hours: 2 }),
       color: 'text-purple-500',
+      appId: 'finder',
     },
   ];
+
+  const handleNotificationClick = (notification: Notification) => {
+    if (notification.appId && onOpenApp) {
+      onOpenApp(notification.appId);
+      setIsOpen(false);
+    }
+  };
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -87,6 +112,7 @@ export function NotificationCenter() {
                 initial={{ opacity: 0, x: reduceMotion ? 0 : 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: reduceMotion ? 0 : notification.id * 0.05 }}
+                onClick={() => handleNotificationClick(notification)}
               >
                 <div className="flex gap-3">
                   <div className={`shrink-0 ${notification.color}`}>

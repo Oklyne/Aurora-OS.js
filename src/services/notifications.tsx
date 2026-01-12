@@ -6,13 +6,13 @@ import { SystemToast } from '@/components/ui/notifications/SystemToast';
 type NotificationType = 'success' | 'warning' | 'error';
 
 export const notify = {
-    system: (type: NotificationType, source: string, message: React.ReactNode, subtitle?: string) => {
+    system: (type: NotificationType, source: string, message: React.ReactNode, subtitle?: string, appId?: string, onOpenApp?: (appId: string) => void) => {
         // Play sound
         soundManager.play(type);
 
         // Show toast
         toast.custom(() => (
-            <SystemToast type={type} source={source} message={message} subtitle={subtitle} />
+            <SystemToast type={type} source={source} message={message} subtitle={subtitle} appId={appId} onOpenApp={onOpenApp} />
         ), {
             position: 'bottom-right',
             duration: 4000,
