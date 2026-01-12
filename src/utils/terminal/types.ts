@@ -3,6 +3,7 @@ import { FileSystemContextType } from '../../components/FileSystemContext';
 
 export interface CommandContext {
     args: string[];
+    stdin?: string[]; // Input from pipe
     fileSystem: FileSystemContextType;
     currentPath: string;
     setCurrentPath: (path: string) => void;

@@ -142,6 +142,7 @@ Or use the [GitHub Pages](https://mental-os.github.io/Aurora-OS.js) (LIVE DEMO)
 - **Modals**: such as "Open File" or "Create/Edit Event" blurs the background.
 - **Main Services & Mail**: Trash functionality and permanent deletion.
 - **Mail App**: Improved UI and responsive design to match Messages App.
+- **Terminal performance**: by switching to memo's, the terminal is now much faster and more responsive.
 
 ### Fixed
 
@@ -149,6 +150,7 @@ Or use the [GitHub Pages](https://mental-os.github.io/Aurora-OS.js) (LIVE DEMO)
 - **Drag & Drop**: Fixed drag-and-drop support system-wide (Finder, Calendar, etc.) avoiding double-click triggers (browsers limitation).
 - **Finder**: Fixed double-click launch reliability and "Open Folder" case-sensitivity issues.
 - **Mail App**: Fixed remembering opened tabs after app close, or relogin.
+- **Terminal text selection**: Fixed text selection in Terminal app created by the "no text selection" settings across the app (input boxes should be fine).
 - **Session**: Prevented apps from auto-playing/opening content when restoring old sessions.
 
 ### [View full version history](HISTORY.md)

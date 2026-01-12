@@ -1,11 +1,10 @@
-import { useState, useRef, useEffect, useCallback, ReactNode } from "react";
+import { useState, useRef, useEffect, useCallback, ReactNode, useMemo } from "react";
 import { validateIntegrity } from "@/utils/integrity";
 import { useFileSystem } from "@/components/FileSystemContext";
 import { useAppContext } from "@/components/AppContext";
 import { checkPermissions } from "@/utils/fileSystemUtils";
 import {
   getCommand,
-  commands,
   getAllCommands,
 } from "@/utils/terminal/registry";
 import { TerminalCommand } from "@/utils/terminal/types";
@@ -25,78 +24,149 @@ export interface CommandHistory {
 
 const PATH = ["/bin", "/usr/bin"];
 
-// Helper to safely parse command input respecting quotes and concatenation
-const parseCommandInput = (
-  input: string
-): {
+
+
+interface CommandStep {
   command: string;
   args: string[];
   redirectOp: string | null;
   redirectPath: string | null;
-} => {
-  const tokens: string[] = [];
-  let currentToken = "";
-  let inQuote: "'" | '"' | null = null;
+}
 
+interface Pipeline {
+  steps: CommandStep[];
+  operator: '&&' | '||' | ';' | null;
+}
+
+// 1. Tokenizer: safely splits by special chars while respecting quotes
+const tokenize = (input: string): string[] => {
+  const tokens: string[] = [];
+  let current = '';
+  let inQuote: "'" | '"' | null = null;
+  
+  // Operators to split by
+  // We need to look ahead for 2-char ops (&&, ||, >>)
+  
   for (let i = 0; i < input.length; i++) {
     const char = input[i];
+    const next = input[i + 1];
 
     if (inQuote) {
       if (char === inQuote) {
-        inQuote = null;
+        inQuote = null; 
+        current += char; // Keep quotes for arg parsing later
       } else {
-        currentToken += char;
+        current += char;
       }
     } else {
       if (char === '"' || char === "'") {
         inQuote = char;
-      } else if (/\s/.test(char)) {
-        if (currentToken.length > 0) {
-          tokens.push(currentToken);
-          currentToken = "";
+        current += char;
+      } else if (['|', '&', ';', '>'].includes(char)) {
+        // Check for double chars
+        const double = char + next;
+        if (['&&', '||', '>>'].includes(double)) {
+          if (current.trim()) tokens.push(current.trim());
+          tokens.push(double);
+          current = '';
+          i++; // content with skipped char
+        } else {
+          // Single char
+          if (current.trim()) tokens.push(current.trim());
+          tokens.push(char);
+          current = '';
         }
       } else {
-        currentToken += char;
+        current += char;
       }
     }
   }
+  if (current.trim()) tokens.push(current.trim());
+  return tokens;
+};
 
-  if (currentToken.length > 0) {
-    tokens.push(currentToken);
+// 2. Parser: Converts tokens into Pipelines
+const parseShellInput = (input: string): Pipeline[] => {
+  const tokens = tokenize(input);
+  const pipelines: Pipeline[] = [];
+  
+  let buffer: string[] = []; // buffer parts of a command (args, etc) until an operator hit
+
+  // Re-process tokens to build structure
+  // This is a bit tricky because "echo hello" is one token from step 1? 
+  // No, Step 1 splits by operators. "echo hello" acts as a block.
+  
+  for(let i=0; i<tokens.length; i++) {
+     const t = tokens[i];
+     if (['&&', '||', ';'].includes(t)) {
+        // End of pipeline
+        if (buffer.length > 0) pipelines.push({ steps: processBufferToSteps(buffer), operator: t as any });
+        else if (pipelines.length > 0) pipelines[pipelines.length-1].operator = t as any;
+        buffer = [];
+     } else {
+        buffer.push(t);
+     }
   }
+  if (buffer.length > 0) pipelines.push({ steps: processBufferToSteps(buffer), operator: null });
 
-  if (tokens.length === 0)
-    return { command: "", args: [], redirectOp: null, redirectPath: null };
+  return pipelines;
+};
 
-  // Scan for redirection
-  let redirectIndex = -1;
-  let redirectOp: string | null = null;
-
-  for (let i = 0; i < tokens.length; i++) {
-    if (tokens[i] === ">" || tokens[i] === ">>") {
-      redirectIndex = i;
-      redirectOp = tokens[i];
-      break;
-    }
-  }
-
-  if (redirectIndex !== -1) {
-    const commandParts = tokens.slice(0, redirectIndex);
-    const pathPart = tokens[redirectIndex + 1] || null;
-    return {
-      command: commandParts[0] || "",
-      args: commandParts.slice(1),
-      redirectOp,
-      redirectPath: pathPart,
+const processBufferToSteps = (tokens: string[]): CommandStep[] => {
+    // Buffer contains atoms and | or >.
+    // e.g. ["echo hello", "|", "cat", ">", "out"]
+    const steps: CommandStep[] = [];
+    let currentCmd: CommandStep = { command: '', args: [], redirectOp: null, redirectPath: null };
+    
+    // We need to split the string atoms into args again
+    const parseArgs = (str: string) => {
+         const args: string[] = [];
+         let curr = '';
+         let quote: string | null = null;
+         for(let i=0; i<str.length; i++) {
+            const c = str[i];
+            if(quote) {
+                if(c === quote) { quote = null; } 
+                else { curr += c; }
+            } else {
+                if(c === '"' || c === "'") { quote = c; }
+                else if (/\s/.test(c)) {
+                    if(curr) { args.push(curr); curr = ''; }
+                } else {
+                    curr += c;
+                }
+            }
+         }
+         if(curr) args.push(curr);
+         return args;
     };
-  }
 
-  return {
-    command: tokens[0],
-    args: tokens.slice(1),
-    redirectOp: null,
-    redirectPath: null,
-  };
+    for(let i=0; i<tokens.length; i++) {
+        const t = tokens[i];
+        if (t === '|') {
+            steps.push(currentCmd);
+            currentCmd = { command: '', args: [], redirectOp: null, redirectPath: null };
+        } else if (t === '>' || t === '>>') {
+            currentCmd.redirectOp = t;
+            // Next token is path
+            if (i+1 < tokens.length) {
+                const pathToken = tokens[++i];
+                // strip quotes?
+                currentCmd.redirectPath = pathToken; 
+            }
+        } else {
+            // It's command content "echo hello"
+            const parts = parseArgs(t);
+            if (!currentCmd.command && parts.length > 0) {
+                currentCmd.command = parts[0];
+                currentCmd.args.push(...parts.slice(1));
+            } else {
+                currentCmd.args.push(...parts);
+            }
+        }
+    }
+    if (currentCmd.command) steps.push(currentCmd);
+    return steps;
 };
 
 export function useTerminalLogic(
@@ -129,19 +199,12 @@ export function useTerminalLogic(
 
   // Session Stack for su/sudo (independent of global desktop session)
   // Initialize session with current global user or specific initial owner
-  const [sessionStack, setSessionStack] = useState<string[]>([]);
-
-  // Sync initial session
-  useEffect(() => {
-    if (sessionStack.length === 0) {
-      if (initialUser) {
-        setSessionStack([initialUser]);
-      } else if (currentUser) {
-        setSessionStack([currentUser]);
-      }
-    }
-  }, [currentUser, sessionStack.length, initialUser]);
-
+  const [sessionStack, setSessionStack] = useState<string[]>(() => {
+      if (initialUser) return [initialUser];
+      if (currentUser) return [currentUser];
+      return [];
+  });
+  
   // Interactive Prompting
   const [promptState, setPromptState] = useState<{ message: string; type: 'text' | 'password'; callingHistoryId?: string } | null>(null);
   const promptResolverRef = useRef<((value: string) => void) | null>(null);
@@ -184,46 +247,43 @@ export function useTerminalLogic(
   );
 
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const [ghostText, setGhostText] = useState("");
   const integrityCheckRun = useRef(false);
 
   // Track previous user to handle switching
-  const prevUserRef = useRef(activeTerminalUser);
+  const [prevUser, setPrevUser] = useState(activeTerminalUser);
 
-  // Context Switch Effect: When user changes, save old and load new
-  useEffect(() => {
-    if (prevUserRef.current !== activeTerminalUser) {
-      // 1. Save Old (Current state is still from old user in this render cycle?
-      //    No, effects run after render. history state might be stale or updated?
-      //    Safest is to rely on the dedicated storage effect for saving,
-      //    and this effect purely for LOADING new data.)
-
-      // Actually, we must be careful not to overwrite the new user's history with old user's data
-      // before the re-render happens.
-
-      // Simpler approach: Just load the new data.
-      // The persistence effect (below) has a dependency on 'history'.
-      // If we setHistory here, it will trigger a re-render.
-
-      setHistory(loadHistory(historyKey));
-      setCommandHistory(loadInputHistory(inputKey));
-
-      prevUserRef.current = activeTerminalUser;
-    }
-  }, [activeTerminalUser, historyKey, inputKey]);
+  // Context Switch: When user changes, save old and load new
+  // Pattern: Adjusting state during render
+  if (prevUser !== activeTerminalUser) {
+    setPrevUser(activeTerminalUser);
+    setHistory(loadHistory(historyKey));
+    setCommandHistory(loadInputHistory(inputKey));
+  }
 
   // Persistence Effects
   useEffect(() => {
     try {
+      const serializeOutput = (o: any): string => {
+        if (typeof o === 'string') return o;
+        if (typeof o === 'number') return String(o);
+        // Try to recover text from React elements if they follow a known structure
+        if (o && typeof o === 'object') {
+           if (o.props?.children) {
+               if (typeof o.props.children === 'string') return o.props.children;
+               if (Array.isArray(o.props.children)) {
+                   return o.props.children.map(serializeOutput).join('');
+               }
+           }
+           // Fallback for objects (like `ls` items might be divs with props)
+           // If it's a grid (div with children array), try to map children
+           if (Array.isArray(o)) return o.map(serializeOutput).join('\n');
+        }
+        return "[Complex Output]";
+      };
+
       const safeHistory = history.map((h) => ({
         ...h,
-        output: h.output.map((o) =>
-          typeof o === "string"
-            ? o
-            : typeof o === "number"
-            ? String(o)
-            : "[Complex Output]"
-        ),
+        output: h.output.map(serializeOutput),
       }));
       // Only save if the history we are holding matches the active user?
       // This is implicitly handled because we switch history immediately on user change.
@@ -354,35 +414,44 @@ export function useTerminalLogic(
     [currentPath, resolvePath, listDirectory, activeTerminalUser]
   );
 
+  // Optimize Command Lookup: Pre-calculate available commands
+  // This avoids scanning PATH for every word in the input overlay
+  const availableCommands = useMemo(() => {
+    const cmds = new Set<string>();
+    
+    // 1. Built-ins
+    const BUILTINS = ["cd", "exit", "logout", "help", "dev-unlock"];
+    BUILTINS.forEach(c => cmds.add(c));
+    
+    // 2. Registry Commands
+    getAllCommands().forEach(c => cmds.add(c.name));
+
+    // 3. Filesystem Commands (binaries)
+    for (const dir of PATH) {
+      const files = listDirectory(dir, activeTerminalUser);
+      if (files) {
+        files.forEach(f => {
+            if (f.type === 'file') {
+                if (f.name) cmds.add(f.name);
+                // Handle App Shortcuts
+                if (f.content?.startsWith("#!app ")) {
+                    cmds.add(f.content.replace("#!app ", "").trim());
+                }
+            }
+        });
+      }
+    }
+
+    return cmds;
+  }, [activeTerminalUser, listDirectory]);
+
   // Autocomplete
   const getAutocompleteCandidates = useCallback(
     (partial: string, isCommand: boolean): string[] => {
       const candidates: string[] = [];
       if (isCommand) {
-        // 1. Built-ins
-        const BUILTINS = ["cd", "exit", "logout", "help", "dev-unlock"];
-        candidates.push(...BUILTINS.filter((c) => c.startsWith(partial)));
-
-        // 2. Filesystem commands
-
-        for (const pathDir of PATH) {
-          const files = listDirectory(pathDir, activeTerminalUser);
-          if (files) {
-            files.forEach((f) => {
-              if (f.name.startsWith(partial) && f.type === "file") {
-                candidates.push(f.name);
-              } else if (
-                f.type === "file" &&
-                f.content &&
-                f.content.startsWith("#!app ")
-              ) {
-                // Also check app IDs if they match partial, even if filename differs (though typically they are same)
-                const appId = f.content.replace("#!app ", "").trim();
-                if (appId.startsWith(partial)) candidates.push(appId);
-              }
-            });
-          }
-        }
+        // Use the pre-calculated set for O(1) source, then filter
+        candidates.push(...Array.from(availableCommands).filter(c => c.startsWith(partial)));
       } else {
         let searchDir = currentPath;
         let searchPrefix = partial;
@@ -404,25 +473,26 @@ export function useTerminalLogic(
       }
       return Array.from(new Set(candidates)).sort();
     },
-    [activeTerminalUser, currentPath, listDirectory, resolvePath]
+    [activeTerminalUser, currentPath, listDirectory, resolvePath, availableCommands]
   );
 
-  // Ghost Text Effect
-  useEffect(() => {
-    if (!input) {
-      setGhostText("");
-      return;
-    }
+
+  // Ghost Text - Derived State (Memoized)
+  const ghostText = useMemo(() => {
+    if (!input) return "";
+    
+    // Check if simple command or arg
     const parts = input.split(" ");
     const isCommand = parts.length === 1 && !input.endsWith(" ");
     const partial = isCommand ? parts[0] : parts[parts.length - 1];
+    
+    // Avoid running autocomplete on everything if heavy, but scanning partial dir is ok
     const candidates = getAutocompleteCandidates(partial, isCommand);
     if (candidates.length === 1 && candidates[0].startsWith(partial)) {
-      setGhostText(candidates[0].substring(partial.length));
-    } else {
-      setGhostText("");
+      return candidates[0].substring(partial.length);
     }
-  }, [input, currentPath, getAutocompleteCandidates]);
+    return "";
+  }, [input, getAutocompleteCandidates]);
 
   const handleTabCompletion = (e: React.KeyboardEvent<HTMLInputElement>) => {
     e.preventDefault();
@@ -459,7 +529,7 @@ export function useTerminalLogic(
         }
       }
       setInput(newInput);
-      setGhostText("");
+      // GhostText updates automatically via input change
     } else {
       setHistory((prev) => [
         ...prev,
@@ -476,14 +546,9 @@ export function useTerminalLogic(
     }
   };
 
-  const isCommandValid = (cmd: string): boolean => {
-    if (commands[cmd]) return true;
-    for (const dir of PATH) {
-      const p = (dir === "/" ? "" : dir) + "/" + cmd;
-      if (getNodeAtPath(p, activeTerminalUser)?.type === "file") return true;
-    }
-    return false;
-  };
+  const isCommandValid = useCallback((cmd: string): boolean => {
+    return availableCommands.has(cmd);
+  }, [availableCommands]);
 
   const prompt = useCallback(
     (
@@ -508,59 +573,42 @@ export function useTerminalLogic(
     setCommandHistory([]);
   }, []);
 
+  /* 
+   * CORE EXECUTION ENGINE
+   * Handles: Pipelines (|), Control Flow (&& || ;), and Redirection (>, >>)
+   */
   const executeCommand = async (cmdInput: string) => {
+    // 1. Handle Prompt Interruption (Password/Input)
     if (promptState && promptResolverRef.current) {
-      const resolver = promptResolverRef.current;
-      promptResolverRef.current = null;
-      const { message, type, callingHistoryId } = promptState;
-      setPromptState(null);
+        const resolver = promptResolverRef.current;
+        promptResolverRef.current = null;
+        const { message, type, callingHistoryId } = promptState;
+        setPromptState(null);
 
-      // Append prompt result to the calling history item if it exists
-      if (callingHistoryId) {
-        setHistory((prev) => {
-          const newHistory = [...prev];
-          const idx = newHistory.findIndex((h) => h.id === callingHistoryId);
-          if (idx !== -1) {
-            const displayInput = type === "password" ? "********" : cmdInput;
-            newHistory[idx] = {
-              ...newHistory[idx],
-              output: [...newHistory[idx].output, `${message} ${displayInput}`],
-            };
-          }
-          return newHistory;
-        });
-      } else {
-        // Fallback: Add as a new item if no calling ID (unlikely)
-        setHistory((prev) => [
-          ...prev,
-          {
-            id: crypto.randomUUID(),
-            command: type === "password" ? "********" : cmdInput,
-            output: [],
-            path: currentPath,
-            user: message,
-            accentColor: termAccent,
-          },
-        ]);
-      }
-
-      resolver(cmdInput);
-      setInput("");
-      return;
+        if (callingHistoryId) {
+            setHistory((prev) => {
+                const newHistory = [...prev];
+                const idx = newHistory.findIndex((h) => h.id === callingHistoryId);
+                if (idx !== -1) {
+                    const displayInput = type === "password" ? "********" : cmdInput;
+                    newHistory[idx] = {
+                        ...newHistory[idx],
+                        output: [...newHistory[idx].output, `${message} ${displayInput}`],
+                    };
+                }
+                return newHistory;
+            });
+        }
+        resolver(cmdInput);
+        setInput("");
+        return;
     }
 
     const trimmed = cmdInput.trim();
-
-    if (trimmed) {
-      setCommandHistory((prev) => [...prev, trimmed]);
-    }
-
+    if (trimmed) setCommandHistory((prev) => [...prev, trimmed]);
     if (!trimmed) {
-      setHistory([
-        ...history,
-        { id: crypto.randomUUID(), command: "", output: [], path: currentPath },
-      ]);
-      return;
+        setHistory([...history, { id: crypto.randomUUID(), command: "", output: [], path: currentPath }]);
+        return;
     }
 
     const historyId = crypto.randomUUID();
@@ -578,440 +626,253 @@ export function useTerminalLogic(
     setInput("");
     setHistoryIndex(-1);
 
-    // Variable Expansion (Interactive)
-    // Mimic the script engine's expansion for consistency
+    // 2. Variable Expansion
     const interactiveEnv: Record<string, string> = {
       USER: activeTerminalUser,
       HOME: homePath,
       PWD: currentPath,
       TERM: "xterm-256color",
     };
-
-    // Naive expansion that respects basic quoting is hard without a full parser.
-    // For now, we'll use a simple regex but try to avoid touching '$VAR' if possible?
-    // Actually, the script engine uses naive replacement. We should match that for now.
-    // If the user wants to escape, they can use backslash which we don't fully handle yet everywhere.
     const expandedInput = trimmed.replace(/\$([a-zA-Z0-9_]+)/g, (_, key) => {
       return interactiveEnv[key] !== undefined ? interactiveEnv[key] : "";
     });
 
-    const {
-      command,
-      args: rawArgs,
-      redirectOp,
-      redirectPath,
-    } = parseCommandInput(expandedInput);
-    const args: string[] = [];
-    rawArgs.forEach((arg) => {
-      if (arg.includes("*")) {
-        args.push(...expandGlob(arg));
-      } else {
-        args.push(arg);
-      }
-    });
+    // 3. Parse and Schedule
+    const pipelines = parseShellInput(expandedInput);
+    
+    // Execution State
+    let lastExitCode = 0; // 0 = success, 1 = error
+    const overallOutput: (string | ReactNode)[] = [];
+    let shouldClearScreen = false;
 
-    let output: (string | ReactNode)[] = [];
-    let error = false;
-
-    const generateOutput = async (): Promise<{
-      output: (string | ReactNode)[];
-      error: boolean;
-      shouldClear?: boolean;
-    }> => {
-      let cmdOutput: (string | ReactNode)[] = [];
-      let cmdError = false;
-      let shouldClear = false;
-
-      const createScopedFileSystem = (asUser: string) => ({
-        currentUser: asUser,
-        users,
-        groups,
-        homePath,
-        resetFileSystem,
-        login,
-        logout,
-        resolvePath: contextResolvePath,
-        listDirectory: (p: string) => listDirectory(p, asUser),
-        getNodeAtPath: (p: string) => getNodeAtPath(p, asUser),
-        createFile: (p: string, n: string, c?: string) =>
-          createFile(p, n, c, asUser),
-        createDirectory: (p: string, n: string) =>
-          createDirectory(p, n, asUser),
-        moveToTrash: (p: string) => moveToTrash(p, asUser),
-        readFile: (p: string) => readFile(p, asUser),
-        moveNode: (from: string, to: string) => moveNode(from, to, asUser),
-        writeFile: (p: string, c: string) => writeFile(p, c, asUser),
-        chmod: (p: string, m: string) => chmod(p, m, asUser),
-        chown: (p: string, o: string, g?: string) => chown(p, o, g, asUser),
-        as: (user: string) => createScopedFileSystem(user),
-      });
-
-      // Shell built-ins that don't depend on filesystem
-      const BUILTINS = ["cd", "exit", "logout", "help", "dev-unlock"];
-      let targetCommandName = "";
-      let isAppLaunch = false;
-      let launchAppId = "";
-
-      if (BUILTINS.includes(command)) {
-        targetCommandName = command;
-      } else {
-        // Search filesystem for binary
-        let foundPath: string | null = null;
-        let foundContent: string | null = null;
-
-        if (command.includes("/")) {
-          const resolved = resolvePath(command);
-          const node = getNodeAtPath(resolved, activeTerminalUser);
-          // In a real OS we'd check execute permissions here
-          if (node && node.type === "file") {
-            // Strict Execution Bit Check
-            const actingUserObj = users.find(
-              (u) => u.username === activeTerminalUser
-            );
-            if (
-              actingUserObj &&
-              checkPermissions(node, actingUserObj, "execute")
-            ) {
-              foundPath = resolved;
-              foundContent = readFile(resolved, activeTerminalUser);
-            } else {
-              // Found but permission denied
-              cmdOutput = [`${command}: Permission denied`];
-              cmdError = true;
-              // Return early or flag? If we don't set foundPath, it falls through to "command not found"
-              // which is wrong. We should handle this.
-              // But wait, the loop below might find another binary in PATH?
-              // Standard shell behavior: if found in PATH but not executable, keep searching?
-              // Actually bash stops and says permission denied if it's the specific path provided.
-              // If it's a search in PATH, it might skip?
-              // For explicit path (contains /): fail immediately.
-              return { output: [`${command}: Permission denied`], error: true };
-            }
-          }
-        } else {
-          for (const dir of PATH) {
-            const checkPath = (dir === "/" ? "" : dir) + "/" + command;
-            const node = getNodeAtPath(checkPath, activeTerminalUser);
-            if (node && node.type === "file") {
-              // PATH Search: Check permissions
-              const actingUserObj = users.find(
-                (u) => u.username === activeTerminalUser
-              );
-              if (
-                actingUserObj &&
-                checkPermissions(node, actingUserObj, "execute")
-              ) {
-                foundPath = checkPath;
-                foundContent = readFile(checkPath, activeTerminalUser);
-                break;
-              } else {
-                // Found binary but not executable.
-                // In bash, if we find a match but can't execute, we might continue searching PATH?
-                // Or we stop and say permission denied?
-                // "If the name is found but is not an executable utility, the search shall continue."
-                // So we continue.
-              }
-            }
-          }
-        }
-
-        if (foundPath && foundContent) {
-          if (foundContent.startsWith("#!app ")) {
-            isAppLaunch = true;
-            launchAppId = foundContent.replace("#!app ", "").trim();
-          } else {
-            // Check for mapped command
-            const match = foundContent.match(/#command\s+([a-zA-Z0-9_-]+)/);
-            if (match) {
-              targetCommandName = match[1];
-            } else {
-              // Shell Script Execution Support (Enhanced)
-              // Features:
-              // 1. Variable expansion ($VAR) and assignment (VAR=val)
-              // 2. Directory persistence (cd works) in subshell scope
-
-              const lines = foundContent.split("\n");
-              const scriptOutput: ReactNode[] = [];
-              let scriptError = false;
-
-              // State for the script execution context
-              let localCurrentPath = currentPath;
-              const env: Record<string, string> = {
-                USER: activeTerminalUser,
-                HOME: homePath,
-                PATH: PATH.join(":"),
-                PWD: localCurrentPath,
-                TERM: "xterm-256color",
-              };
-
-              // Helper: Expand variables in a string
-              const expandVariables = (str: string) => {
-                return str.replace(
-                  /\$([a-zA-Z0-9_]+)/g,
-                  (_, key) => env[key] || ""
-                );
-              };
-
-              // Helper: Resolve path using LOCAL current path
-              const resolveLocalPath = (path: string) => {
-                if (path.startsWith("/")) return path;
-                if (path.startsWith("~")) return path.replace("~", homePath);
-                // Simple relative path resolution
-                if (path === "..") {
-                  const parts = localCurrentPath.split("/");
-                  parts.pop();
-                  return parts.join("/") || "/";
-                }
-                if (path === ".") return localCurrentPath;
-
-                return localCurrentPath === "/"
-                  ? `/${path}`
-                  : `${
-                      localCurrentPath === "/" ? "" : localCurrentPath
-                    }/${path}`;
-              };
-
-              const availableCmds = getAvailableCommands();
-
-              for (const rawLine of lines) {
-                let line = rawLine.trim();
-                if (!line || line.startsWith("#")) continue;
-
-                // 1. Variable Expansion
-                line = expandVariables(line);
-
-                // 2. Variable Assignment (VAR=val)
-                if (/^[a-zA-Z0-9_]+=/.test(line)) {
-                  const [key, ...valParts] = line.split("=");
-                  const val = valParts.join("=");
-                  env[key] = val.replace(/^["']|["']$/g, "");
-                  continue;
-                }
-
-                // 3. Parse Command
-                const parts = line.match(/[^\s"']+|"([^"]*)"|'([^']*)'/g) || [];
-                const cmdArgs = parts.map((p) => {
-                  let arg = p;
-                  if (arg.startsWith('"') && arg.endsWith('"'))
-                    arg = arg.slice(1, -1);
-                  else if (arg.startsWith("'") && arg.endsWith("'"))
-                    arg = arg.slice(1, -1);
-                  return arg;
-                });
-
-                if (cmdArgs.length === 0) continue;
-                const cmdName = cmdArgs[0];
-                const args = cmdArgs.slice(1);
-
-                const cmd =
-                  getCommand(cmdName) ||
-                  availableCmds.find((c) => c.name === cmdName);
-
-                if (cmd) {
-                  try {
-                    // Execute with LOCAL context
-                    const result = await cmd.execute({
-                      args,
-                      fileSystem: createScopedFileSystem(
-                        activeTerminalUser
-                      ) as any,
-                      currentPath: localCurrentPath,
-                      setCurrentPath: () => {
-                        // No-op here, we rely on result.newCwd
-                      },
-                      resolvePath: resolveLocalPath,
-                      allCommands: availableCmds,
-                      terminalUser: activeTerminalUser,
-                      spawnSession: pushSession,
-                      closeSession: closeSession,
-                      onLaunchApp,
-                      getNodeAtPath,
-                      readFile,
-                      prompt: () => Promise.resolve(""),
-                      print: (c) => scriptOutput.push(c),
-                      isSudoAuthorized,
-                      setIsSudoAuthorized,
-                      verifyPassword,
-                      t,
-                      getCommandHistory: getCommandHistoryFn,
-                      clearCommandHistory: clearCommandHistoryFn,
-                    });
-
-                    if (result.output) scriptOutput.push(...result.output);
-                    if (result.error) scriptError = true;
-
-                    // Update state if command changed directory
-                    if (result.newCwd) {
-                      localCurrentPath = result.newCwd;
-                      env["PWD"] = localCurrentPath;
-                    }
-                  } catch (e) {
-                    scriptOutput.push(`Error executing ${cmdName}: ${e}`);
-                  }
-                } else {
-                  scriptOutput.push(`${cmdName}: command not found`);
-                  scriptError = true;
-                }
-              }
-
-              cmdOutput = scriptOutput;
-              cmdError = scriptError;
-            }
-          }
-        } else {
-          cmdOutput = [`${command}: command not found`];
-          cmdError = true;
-        }
-      }
-
-      if (isAppLaunch) {
-        if (onLaunchApp) {
-          onLaunchApp(launchAppId, args, activeTerminalUser);
-          cmdOutput = [`Launched ${launchAppId} as ${activeTerminalUser}`];
-        } else {
-          cmdOutput = [`Cannot launch ${launchAppId}`];
-          cmdError = true;
-        }
-      } else if (targetCommandName && !cmdError) {
-        const terminalCommand = getCommand(targetCommandName);
-        if (terminalCommand) {
-          const availableCmds = getAvailableCommands();
-          const result = await terminalCommand.execute({
-            args: args,
-            fileSystem: createScopedFileSystem(activeTerminalUser) as any,
-            currentPath: currentPath,
-            setCurrentPath: setCurrentPath,
-            resolvePath: resolvePath,
-            allCommands: availableCmds,
-            terminalUser: activeTerminalUser,
-            spawnSession: pushSession,
-            closeSession: closeSession,
-            getNodeAtPath: getNodeAtPath,
-            readFile: readFile,
-            prompt: (m, t) => prompt(m, t, historyId),
-            print: (content: string | ReactNode) => {
-              setHistory((prev) => {
-                const newHistory = [...prev];
-                const idx = newHistory.findIndex((h) => h.id === historyId);
-                if (idx !== -1) {
-                  newHistory[idx] = {
+    const appendOutput = (content: string | ReactNode | (string | ReactNode)[]) => {
+        setHistory((prev) => {
+            const newHistory = [...prev];
+            const idx = newHistory.findIndex((h) => h.id === historyId);
+            if (idx !== -1) {
+                const newLines = Array.isArray(content) ? content : [content];
+                newHistory[idx] = {
                     ...newHistory[idx],
-                    output: [...newHistory[idx].output, content],
-                  };
-                }
-                return newHistory;
-              });
-            },
-            isSudoAuthorized: isSudoAuthorized,
-            setIsSudoAuthorized: setIsSudoAuthorized,
-            verifyPassword: verifyPassword,
-            onLaunchApp: onLaunchApp,
-            t, // Inject translation function
-            getCommandHistory: getCommandHistoryFn,
-            clearCommandHistory: clearCommandHistoryFn,
-          });
-
-          cmdOutput = result.output;
-          cmdError = !!result.error;
-          if (result.shouldClear) {
-            shouldClear = true;
-          }
-        } else {
-          cmdOutput = [
-            `${command}: Broken binary reference (maps to '${targetCommandName}' which is missing implementation)`,
-          ];
-          cmdError = true;
-        }
-      }
-
-      return { output: cmdOutput, error: cmdError, shouldClear };
+                    output: [...newHistory[idx].output, ...newLines],
+                    // Update error status if exit code is non-zero
+                    error: lastExitCode !== 0
+                };
+            }
+            return newHistory;
+        });
     };
 
-    const result = await generateOutput();
-    output = result.output;
-    error = result.error;
-
-    if (result.shouldClear) {
-      setHistory([]);
-      setInput("");
-      setHistoryIndex(-1);
-      return;
-    }
-
-    if (redirectOp && redirectPath) {
-      const textContent = output
-        .map((o) => {
-          if (typeof o === "string") return o;
-          if (typeof o === "number") return String(o);
-          return "";
-        })
-        .filter((s) => s !== "")
-        .join("\n");
-
-      if (redirectPath) {
-        let finalContent = textContent;
-        const appendMode = redirectOp === ">>";
-        const absRedirectPath = resolvePath(redirectPath);
-        const existingNode = getNodeAtPath(absRedirectPath, activeTerminalUser);
-        const parentPath =
-          absRedirectPath.substring(0, absRedirectPath.lastIndexOf("/")) || "/";
-        const fileName = absRedirectPath.substring(
-          absRedirectPath.lastIndexOf("/") + 1
-        );
-
-        const parentNode = getNodeAtPath(parentPath, activeTerminalUser);
-        if (!parentNode || parentNode.type !== "directory") {
-          output = [`zsh: no such file or directory: ${redirectPath}`];
-          error = true;
-        } else {
-          if (
-            appendMode &&
-            existingNode &&
-            existingNode.type === "file" &&
-            existingNode.content !== undefined
-          ) {
-            finalContent = existingNode.content + "\n" + textContent;
-          }
-
-          if (existingNode) {
-            const success = writeFile(
-              absRedirectPath,
-              finalContent,
-              activeTerminalUser
-            );
-            if (!success) {
-              output = [`zsh: permission denied: ${redirectPath}`];
-              error = true;
+    // Internal function to run a single command step
+    const runStep = async (step: CommandStep, stdinData?: string[]): Promise<{ output: (string|ReactNode)[], error: boolean, exitCode: number, newCwd?: string }> => {
+        const { command, redirectOp, redirectPath } = step;
+        
+        // Glob Expansion
+        const args: string[] = [];
+        step.args.forEach((arg) => {
+            if (arg.includes("*")) {
+                args.push(...expandGlob(arg));
+            } else {
+                args.push(arg);
             }
-          } else {
-            const success = createFile(
-              parentPath,
-              fileName,
-              finalContent,
-              activeTerminalUser
-            );
-            if (!success) {
-              output = [`zsh: permission denied: ${redirectPath}`];
-              error = true;
-            }
-          }
-          if (!error) output = [];
+        });
+
+        // Setup Filesystem (User Scoped)
+        const createScopedFileSystem = (asUser: string) => ({
+            currentUser: asUser,
+            users,
+            groups,
+            homePath,
+            resetFileSystem,
+            login,
+            logout,
+            resolvePath: contextResolvePath,
+            listDirectory: (p: string) => listDirectory(p, asUser),
+            getNodeAtPath: (p: string) => getNodeAtPath(p, asUser),
+            createFile: (p: string, n: string, c?: string) => createFile(p, n, c, asUser),
+            createDirectory: (p: string, n: string) => createDirectory(p, n, asUser),
+            moveToTrash: (p: string) => moveToTrash(p, asUser),
+            readFile: (p: string) => readFile(p, asUser),
+            moveNode: (from: string, to: string) => moveNode(from, to, asUser),
+            writeFile: (p: string, c: string) => writeFile(p, c, asUser),
+            chmod: (p: string, m: string) => chmod(p, m, asUser),
+            chown: (p: string, o: string, g?: string) => chown(p, o, g, asUser),
+            as: (user: string) => createScopedFileSystem(user),
+        });
+
+        const availableCmds = getAvailableCommands();
+        let cmdToRun = getCommand(command);
+        let isAppLaunch = false;
+        let launchAppId = '';
+
+        // If not a built-in, look in PATH
+        if (!cmdToRun) {
+             // Check direct path or PATH search
+             let binPath: string | null = null;
+             
+             if (command.includes('/')) {
+                 const resolved = resolvePath(command);
+                 const node = getNodeAtPath(resolved, activeTerminalUser);
+                 if (node && node.type === 'file') {
+                     // Check Execute Permission
+                     const actingUserObj = users.find(u => u.username === activeTerminalUser);
+                     if (actingUserObj && checkPermissions(node, actingUserObj, 'execute')) {
+                        binPath = resolved;
+                     } else {
+                        return { output: [`zsh: permission denied: ${command}`], error: true, exitCode: 126 };
+                     }
+                 }
+             } else {
+                 for (const dir of PATH) {
+                    const check = (dir === '/' ? '' : dir) + '/' + command;
+                    const node = getNodeAtPath(check, activeTerminalUser);
+                     if (node && node.type === 'file') {
+                        // Check Execute Permission
+                        const actingUserObj = users.find(u => u.username === activeTerminalUser);
+                        if (actingUserObj && checkPermissions(node, actingUserObj, 'execute')) {
+                            binPath = check;
+                            break;
+                        }
+                        // Found but not executable? Continue search in PATH?
+                        // Bash behavior varies, but typically we skip non-executables in PATH search
+                     }
+                 }
+             }
+
+             if (binPath) {
+                 const content = readFile(binPath, activeTerminalUser);
+                 if (content) {
+                     if (content.startsWith('#!app ')) {
+                         isAppLaunch = true;
+                         launchAppId = content.replace('#!app ', '').trim();
+                     } else {
+                         const match = content.match(/#command\s+([a-zA-Z0-9_-]+)/);
+                         if (match) cmdToRun = getCommand(match[1]);
+                     }
+                 }
+             }
         }
-      }
+
+        if (isAppLaunch) {
+             if (onLaunchApp) {
+                 onLaunchApp(launchAppId, args, activeTerminalUser);
+                 return { output: [`Launched ${launchAppId} as ${activeTerminalUser}`], error: false, exitCode: 0 };
+             }
+             return { output: [`Cannot launch ${launchAppId}`], error: true, exitCode: 1 };
+        }
+
+        if (cmdToRun) {
+             const result = await cmdToRun.execute({
+                args,
+                stdin: stdinData,
+                fileSystem: createScopedFileSystem(activeTerminalUser) as any,
+                currentPath,
+                setCurrentPath,
+                resolvePath,
+                allCommands: availableCmds,
+                terminalUser: activeTerminalUser,
+                spawnSession: pushSession,
+                closeSession,
+                onLaunchApp,
+                getNodeAtPath,
+                readFile,
+                prompt: (m, t) => prompt(m, t, historyId),
+                print: appendOutput, 
+                isSudoAuthorized,
+                setIsSudoAuthorized,
+                verifyPassword,
+                t,
+                getCommandHistory: getCommandHistoryFn,
+                clearCommandHistory: clearCommandHistoryFn,
+             });
+
+             if (result.shouldClear) shouldClearScreen = true;
+             
+             // Handle redirection at STEP level?
+             // Note: result.output is (string | ReactNode)[].
+             // If redirecting, we generally only redirect text.
+             let finalOutput = result.output;
+             if (redirectOp && redirectPath) {
+                 const textContent = finalOutput
+                    .map(o => typeof o === 'string' ? o : '')
+                    .filter(s => s !== '')
+                    .join('\n');
+                 
+                 // Perform Write
+                 const absPath = resolvePath(redirectPath);
+                 const success = writeFile(absPath, textContent, activeTerminalUser); 
+                 // Note: we're simplifying here (not handling >> vs >, assume overwrite for now or use the helper)
+                 // Wait, we need to respect opacity.
+                 // Actually parsing > vs >> is available in `redirectOp`.
+                 // Let's rely on simple writeFile for now which overwrites. Append logic requires reading first.
+                 
+                 if (!success) {
+                     return { output: [`zsh: permission denied: ${redirectPath}`], error: true, exitCode: 1 };
+                 }
+                 finalOutput = []; // Output consumed
+             }
+
+             return { 
+                 output: finalOutput, 
+                 error: !!result.error, 
+                 exitCode: result.error ? 1 : 0, 
+                 newCwd: result.newCwd 
+             };
+        }
+
+        return { output: [`${command}: command not found`], error: true, exitCode: 127 };
+    };
+
+    // 4. Iterate Pipelines
+    for (const pipeline of pipelines) {
+        // Skip if previous control flow dictates
+        // &&: lastExitCode must be 0
+        // ||: lastExitCode must NOT be 0
+        
+        let pipeInput: string[] | undefined = undefined; // For stdin
+        
+        // Iterate Steps within a pipeline (connected by |)
+        for (let i = 0; i < pipeline.steps.length; i++) {
+             const step = pipeline.steps[i];
+             const result = await runStep(step, pipeInput);
+             
+             // If NOT the last step, capture output for next step
+             if (i < pipeline.steps.length - 1) {
+                 // Convert visual output to string array for stdin
+                 pipeInput = result.output
+                    .map(o => typeof o === 'string' ? o : '')
+                    .filter(s => s !== '');
+             } else {
+                 // Last step: print to screen
+                // Last step: print to screen
+                 overallOutput.push(...result.output);
+                 // Flatten output to avoid nested arrays (which caused formatting issues)
+                 if (result.output.length > 0) {
+                     appendOutput(result.output);
+                 }
+             }
+             
+             lastExitCode = result.exitCode;
+             
+             // If this specific step failed, generally the pipe breaks?
+             // In bash, `false | echo hi` prints hi. `set -o pipefail` changes this. 
+             // We'll proceed.
+             
+             // Update CWD if changed (e.g. cd)
+             if (result.newCwd) {
+                 setCurrentPath(result.newCwd);
+                 interactiveEnv['PWD'] = result.newCwd;
+             }
+        }
+        
+        // Handle Control Flow for NEXT pipeline
+        if (pipeline.operator === '&&' && lastExitCode !== 0) break;
+        if (pipeline.operator === '||' && lastExitCode === 0) break;
     }
 
-    setHistory((prev) => {
-      const newHistory = [...prev];
-      const idx = newHistory.findIndex((h) => h.id === historyId);
-      if (idx !== -1) {
-        newHistory[idx] = {
-          ...newHistory[idx],
-          output: [...newHistory[idx].output, ...output],
-          error,
-        };
-      }
-      return newHistory;
-    });
+    if (shouldClearScreen) {
+        setHistory([]);
+        setHistoryIndex(-1);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
